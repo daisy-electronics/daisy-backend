@@ -53,7 +53,7 @@ module.exports = {
 	// Tracking requests and waiting for running requests before shutdowning. More info: https://moleculer.services/docs/0.13/fault-tolerance.html
 	tracking: {
 		// Enable feature
-		enabled: false,
+		enabled: true,
 		// Number of milliseconds to wait before shutdowning the process
 		shutdownTimeout: 5000,
 	},
