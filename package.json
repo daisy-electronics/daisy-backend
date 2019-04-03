@@ -12,11 +12,20 @@
     "dc:up": "docker-compose up --build -d",
     "dc:down": "docker-compose down"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daisy-electronics/daisy-backend.git"
+  },
   "keywords": [
     "microservices",
     "moleculer"
   ],
-  "author": "",
+  "author": "Kothique Felixx <kothiue@protonmail.ch>",
+  "license": "WTFPL",
+  "bugs": {
+    "url": "https://github.com/daisy-electronics/daisy-backend/issues"
+  },
+  "homepage": "https://github.com/daisy-electronics/daisy-backend#readme",
   "devDependencies": {
     "eslint": "^5.10.0",
     "jest": "^23.6.0",
@@ -24,12 +33,15 @@
     "moleculer-repl": "^0.5.3"
   },
   "dependencies": {
+    "async-busboy": "^0.7.0",
+    "http-range": "^1.0.0",
     "moleculer": "^0.13.0",
+    "moleculer-io": "^1.1.1",
     "moleculer-web": "^0.8.0",
     "msgpack-lite": "^0.1.26"
   },
   "engines": {
-    "node": ">= 8.x.x"
+    "node": ">= 11.x.x"
   },
   "jest": {
     "coverageDirectory": "../coverage",
