@@ -149,8 +149,12 @@ module.exports = {
       }, data);
       this.logger.info('Driver created.', { deviceId: id, type: device.type });
 
-      driver.variables.forEach(variable => driver.on(variable, value =>
-        this.broker.emit('device.state-change', { deviceId: id, variable, value })));
+      driver.variables.forEach(variable => driver.on(variable, async value => {
+        await this.rTable.get(id).update({
+          state: this.r.row('state').merge({ [variable]: value })
+        });
+        this.broker.emit('device.state-change', { deviceId: id, variable, value });
+      }));
 
       this.drivers[id] = driver;
     }
