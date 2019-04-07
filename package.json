@@ -35,11 +35,13 @@
   "dependencies": {
     "@kothique/moleculer-rethinkdbdash": "^1.0.1",
     "async-busboy": "^0.7.0",
+    "bcrypt": "^3.0.5",
     "http-range": "^1.0.0",
     "moleculer": "^0.13.0",
     "moleculer-io": "^1.1.1",
     "moleculer-web": "^0.8.0",
-    "msgpack-lite": "^0.1.26"
+    "msgpack-lite": "^0.1.26",
+    "uuid": "^3.3.2"
   },
   "engines": {
     "node": ">= 11.x.x"

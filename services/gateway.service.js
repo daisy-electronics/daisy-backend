@@ -5,6 +5,7 @@ const SocketIOService = require('moleculer-io');
 const { MoleculerError } = require('moleculer').Errors;
 const asyncBusboy = require('async-busboy');
 const { Range, ContentRange } = require('http-range');
+const { MoleculerClientError } = require('moleculer').Errors;
 
 module.exports = {
 	name: 'gateway',
@@ -26,50 +27,47 @@ module.exports = {
 			}
 		],
 
-		routes: [{
-			path: '/api',
-			mappingPolicy: 'restrict',
-			aliases: {
-			},
-			whitelist: [/.*/],
-			onBeforeCall(ctx, route, req, res) {
-				if (req.headers.range) {
-					const range = Range.prototype.parse(req.headers.range);
-					if (range.unit !== 'bytes') {
-						throw new MoleculerClientError('Unit for \'range\' header must be \'bytes\'.');
-					}
+		path: '/api',
 
-					ctx.meta.range = {
-						start: range.ranges[0].low,
-						end: range.ranges[0].high
-					};
+		routes: [
+			{
+				path: '/user',
+				mappingPolicy: 'restrict',
+				authorization: true,
+				whitelist: [/.*/],
+				aliases: {
+					'GET :username/new-access-token': 'auth.newAccessToken'
+				},
+				bodyParsers: {
+					json: true
+				},
+				onBeforeCall(ctx, route, req, res) {
+					return this.onBeforeCall(ctx, route, req, res);
+				},
+				onAfterCall(ctx, route, req, res, data) {
+					return this.onAfterCall(ctx, route, req, res, data);
 				}
 			},
-			onAfterCall(ctx, route, req, res, data) {
-				if (ctx.meta.range) {
-					res.status = 206;
-					res.setHeader('Accept-Ranges', 'bytes');
-					if (ctx.meta.contentLength) {
-						res.setHeader('Content-Length', ctx.meta.contentLength);
-					}
-
-					const range = !ctx.meta.range.start && !ctx.meta.range.end
-						? '*'
-						: `${ctx.meta.range.start || ''}-${ctx.meta.range.end || ''}`;
-					res.setHeader('Content-Range', `bytes ${range}/${ctx.meta.contentLength || '*'}`);
+			{
+				path: '',
+				mappingPolicy: 'restrict',
+				authorization: false,
+				whitelist: [/.*/],
+				aliases: {
+					'POST login': 'auth.login',
+					'GET devices': 'devices.list'
+				},
+				bodyParsers: {
+					json: true
+				},
+				onBeforeCall(ctx, route, req, res) {
+					return this.onBeforeCall(ctx, route, req, res);
+				},
+				onAfterCall(ctx, route, req, res, data) {
+					return this.onAfterCall(ctx, route, req, res, data);
 				}
-
-				if (ctx.meta.contentType) {
-					res.setHeader('Content-Type', ctx.meta.contentType);
-				}
-
-				if (Buffer.isBuffer(data)) {
-					res.end(data);
-				} else {
-					res.end(JSON.stringify(data));
-				}
-			}
-		}],
+			},
+		],
 
 		io: {
 			namespaces: {
@@ -124,6 +122,58 @@ module.exports = {
 				}
 
 				socket.emit('event', subject, data);
+			}
+		}
+	},
+	methods: {
+		async authorize(ctx, route, req) {
+			const authorization = req.headers['x-authorization'];
+			if (!authorization) {
+				throw new MoleculerClientError(`No 'X-Authorization' header.`, 401, 'ERR_NO_AUTHORIZATION_HEADER');
+			}
+
+			const bearer = req.headers['x-bearer'];
+			if (!bearer) {
+				throw new MoleculerClientError(`No 'X-Bearer' header.`, 401, 'ERR_NO_X_BEARER_HEADER');
+			}
+
+			await ctx.call('auth.authorize', { username: bearer, accessToken: authorization });
+		},
+		onBeforeCall(ctx, route, req, res) {
+			if (req.headers.range) {
+				const range = Range.prototype.parse(req.headers.range);
+				if (range.unit !== 'bytes') {
+					throw new MoleculerClientError('Unit for \'range\' header must be \'bytes\'.');
+				}
+
+				ctx.meta.range = {
+					start: range.ranges[0].low,
+					end: range.ranges[0].high
+				};
+			}
+		},
+		onAfterCall(ctx, route, req, res, data) {
+			if (ctx.meta.range) {
+				res.status = 206;
+				res.setHeader('Accept-Ranges', 'bytes');
+				if (ctx.meta.contentLength) {
+					res.setHeader('Content-Length', ctx.meta.contentLength);
+				}
+
+				const range = !ctx.meta.range.start && !ctx.meta.range.end
+					? '*'
+					: `${ctx.meta.range.start || ''}-${ctx.meta.range.end || ''}`;
+				res.setHeader('Content-Range', `bytes ${range}/${ctx.meta.contentLength || '*'}`);
+			}
+
+			if (ctx.meta.contentType) {
+				res.setHeader('Content-Type', ctx.meta.contentType);
+			}
+
+			if (Buffer.isBuffer(data)) {
+				res.end(data);
+			} else {
+				res.end(JSON.stringify(data));
 			}
 		}
 	},
