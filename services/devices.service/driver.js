@@ -55,7 +55,7 @@ module.exports = class Driver extends EventEmitter {
   }
 
   /** @throws {MoleculerClientError} */
-  get(variable) {
+  async get(variable) {
     if (!this._getters[variable]) {
       throw new MoleculerClientError('Variable not found.', 404, 'ERR_VARIABLE_NOT_FOUND', { deviceId: this.id, variable });
     }

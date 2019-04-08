@@ -5,10 +5,10 @@ module.exports = class DHT11 extends Driver {
     super({
       ...options,
       variables: {
-        temperature: ({ getDriver }) => {
+        temperature: () => {
           return Promise.resolve(this._temperature);
         },
-        humidity: ({ getDriver }) => {
+        humidity: () => {
           return Promise.resolve(this._humidity);
         }
       }

@@ -22,7 +22,7 @@ module.exports = {
     this.drivers = {};
   },
   async stopped() {
-    await Promise.all(Object.entries(this.devices).map(async ([id, driver]) => {
+    await Promise.all(Object.entries(this.drivers).map(async ([id, driver]) => {
       await this.rTable.get(id).update({ state: driver.state });
       driver.dispose();
       this.logger.info('Driver disposed of.', { deviceId: id, state: driver.state })
@@ -90,7 +90,8 @@ module.exports = {
           throw new MoleculerClientError('Invalid variable.', null, 'ERR_INVALID_VARIABLE', { deviceId, variable: variableName });
         }
 
-        throw new Error('Not implemented.');
+        const driver = this.drivers[deviceId];
+        return driver.get(variableName);
       }
     },
     dispatchAction: {
@@ -110,7 +111,8 @@ module.exports = {
           throw new MoleculerClientError('Invalid action.', null, 'ERR_INVALID_ACTION', { deviceId, action: actionName });
         }
 
-        throw new Error('Not implemented.');
+        const driver = this.drivers[deviceId];
+        return driver.dispatch(actionName, data);
       }
     }
   },

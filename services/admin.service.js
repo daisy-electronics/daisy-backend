@@ -14,7 +14,7 @@ module.exports = {
       async handler(ctx) {
         const gateway = await ctx.broker.getLocalService('gateway');
         if (gateway) {
-          await ctx.broker.destroyService(gateway);
+          ctx.broker.destroyService(gateway);
         }
       }
     }

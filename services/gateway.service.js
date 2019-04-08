@@ -49,13 +49,35 @@ module.exports = {
 				}
 			},
 			{
+				path: '/device',
+				mappingPolicy: 'restrict',
+				authorization: true,
+				whitelist: [/.*/],
+				aliases: {
+					'GET :deviceId': 'devices.get',
+					'GET :deviceId/:variable': 'devices.getVariable',
+					'POST :deviceId/:action': 'devices.dispatchAction'
+				},
+				bodyParsers: {
+					json: true
+				},
+				onBeforeCall(ctx, route, req, res) {
+					return this.onBeforeCall(ctx, route, req, res);
+				},
+				onAfterCall(ctx, route, req, res, data) {
+					return this.onAfterCall(ctx, route, req, res, data);
+				}
+			},
+			{
 				path: '',
 				mappingPolicy: 'restrict',
 				authorization: false,
 				whitelist: [/.*/],
 				aliases: {
 					'POST login': 'auth.login',
-					'GET devices': 'devices.list'
+					'GET devices': 'devices.list',
+					'POST shutdown': 'admin.shutdown',
+					'POST api-gateway/shutdown': 'admin.shutdownAPIGateway'
 				},
 				bodyParsers: {
 					json: true
