@@ -44,8 +44,8 @@ module.exports = {
         }
 
         if (await bcrypt.compare(password, user.passwordHash)) {
-          const accessToken = await this.createAccessToken(username);
-          return accessToken;
+          const tokenInfo = await this.createAccessToken(username);
+          return tokenInfo;
         } else {
           throw new MoleculerClientError('Wrong login or password.', 401, 'ERR_AUTHENTICATION', { username });
         }
@@ -63,8 +63,8 @@ module.exports = {
           throw new MoleculerClientError('User not found.', 404, 'ERR_USER_NOT_FOUND', { username });
         }
 
-        const accessToken = await this.createAccessToken(username);
-        return accessToken;
+        const tokenInfo = await this.createAccessToken(username);
+        return tokenInfo;
       }
     },
     register: {
@@ -116,14 +116,16 @@ module.exports = {
       const accessToken = uuidv4();
       const now = new Date;
 
+      const tokenInfo = {
+        value: accessToken,
+        expiresAt: new Date(now.valueOf() + this.settings.tokenLifetime)
+      };
+
       await this.rTable.get(username).update({
-        accessTokens: this.r.row('accessTokens').append({
-          value: accessToken,
-          expiresAt: new Date(now.valueOf() + this.settings.tokenLifetime)
-        })
+        accessTokens: this.r.row('accessTokens').append(tokenInfo)
       });
 
-      return accessToken;
+      return tokenInfo;
     }
   }
 };

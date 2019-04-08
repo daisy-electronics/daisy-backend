@@ -27,11 +27,20 @@ module.exports = {
 			}
 		],
 
+		cors: {
+			origin: "*",
+			methods: ["GET", "OPTIONS", "POST", "PUT", "DELETE"],
+			allowedHeaders: "*",
+			//exposedHeaders: "*",
+			credentials: true,
+			maxAge: null
+		},
+
 		path: '/api',
 
 		routes: [
 			{
-				path: '/user',
+				path: '/user/',
 				mappingPolicy: 'restrict',
 				authorization: true,
 				whitelist: [/.*/],
@@ -49,7 +58,7 @@ module.exports = {
 				}
 			},
 			{
-				path: '/device',
+				path: '/device/',
 				mappingPolicy: 'restrict',
 				authorization: true,
 				whitelist: [/.*/],
@@ -192,11 +201,7 @@ module.exports = {
 				res.setHeader('Content-Type', ctx.meta.contentType);
 			}
 
-			if (Buffer.isBuffer(data)) {
-				res.end(data);
-			} else {
-				res.end(JSON.stringify(data));
-			}
+			return data;
 		}
 	},
 	created() {
