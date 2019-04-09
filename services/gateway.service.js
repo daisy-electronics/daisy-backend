@@ -118,7 +118,9 @@ module.exports = {
 						'request': {
 							mappingPolicy: 'restrict',
 							aliases: {
-								'authenticate': 'auth.ioAuthenticate'
+								'authenticate': 'auth.ioAuthenticate',
+								'subscribe': 'publisher.subscribe',
+								'unsubscribe': 'publisher.unsubscribe'
 							},
 							onBeforeCall: function (ctx, socket, action, params, callOptions) {
 								ctx.meta.socket = socket;
