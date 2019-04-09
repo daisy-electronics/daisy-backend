@@ -7,6 +7,8 @@ const asyncBusboy = require('async-busboy');
 const { Range, ContentRange } = require('http-range');
 const { MoleculerClientError } = require('moleculer').Errors;
 
+const TOKEN_VERIFY_INTERVAL = 1000 * 60; // 1 minute
+
 module.exports = {
 	name: 'gateway',
 	mixins: [ApiGateway, SocketIOService],
@@ -107,6 +109,7 @@ module.exports = {
 						'event': {
 							mappingPolicy: 'restrict',
 							aliases: {
+								'deauthenticate': 'auth.ioDeauthenticate'
 							},
 							onBeforeCall: function (ctx, socket, action, params, callOptions) {
 								ctx.meta.socket = socket;
@@ -115,6 +118,7 @@ module.exports = {
 						'request': {
 							mappingPolicy: 'restrict',
 							aliases: {
+								'authenticate': 'auth.ioAuthenticate'
 							},
 							onBeforeCall: function (ctx, socket, action, params, callOptions) {
 								ctx.meta.socket = socket;
@@ -141,7 +145,7 @@ module.exports = {
 			params: {
 				socketId: 'string',
 				subject: 'string',
-				data: 'any'
+				data: { type: 'any', optional: true }
 			},
 			visibility: 'public',
 			handler(ctx) {
@@ -153,6 +157,29 @@ module.exports = {
 				}
 
 				socket.emit('event', subject, data);
+			}
+		},
+		'app.request': {
+			params: {
+				socketId: 'string',
+				subject: 'string',
+				data: { type: 'any', optional: true }
+			},
+			visibility: 'public',
+			handler(ctx) {
+				const { socketId, subject, data = {} } = ctx.params;
+
+				const socket = this.app.clients[socketId];
+
+				return new Promise((resolve, reject) => {
+					socket.emit('request', subject, data, (err, response) => {
+						if (err) {
+							reject(err);
+						} else {
+							resolve(response);
+						}
+					})
+				});
 			}
 		}
 	},
@@ -169,6 +196,30 @@ module.exports = {
 			}
 
 			await ctx.call('auth.authorize', { username: bearer, accessToken: authorization });
+		},
+		async ioVerifyAccessToken(socket) {
+			const { username, authenticated } = socket.$meta;
+			if (!authenticated) {
+				return;
+			}
+
+			const accessToken = await this.broker.call('gateway.app.request', {
+				socketId: socket.id,
+				subject: 'verify-access-token'
+			});
+
+			try {
+				const tokenInfo = await this.broker.call('auth.authorize', { username, accessToken });
+				return tokenInfo;
+			} catch (error) {
+				socket.$meta.username = null;
+				socket.$meta.authenticated = false;
+				await this.broker.call('gateway.app.emit', {
+					socketId: socket.id,
+					subject: 'deauthenticated'
+				});
+				this.logger.debug('Invalid access token.', { socketId: socket.id, username, accessToken });
+			}
 		},
 		onBeforeCall(ctx, route, req, res) {
 			if (req.headers.range) {
@@ -213,11 +264,21 @@ module.exports = {
 	async started() {
 		this.io.of('app').on('connect', this.app.connectionListener = socket => {
 			this.app.clients[socket.id] = socket;
+			socket.$meta = {
+				authenticated: false,
+				username: null
+			};
+
+			const intervalIds = [];
+			intervalIds.push(
+				setInterval(() => this.ioVerifyAccessToken(socket).catch(a => console.log(require('util').inspect(a, { depth: 1 }))), TOKEN_VERIFY_INTERVAL)
+			);
 
 			this.broker.emit(`socket.app.connect`, { socket });
 
 			socket.on('disconnect', () => {
 				this.broker.emit(`socket.app.disconnect`, { socket });
+				intervalIds.forEach(clearInterval);
 				delete this.app.clients[socket.id];
 			});
 		});

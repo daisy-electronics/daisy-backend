@@ -108,6 +108,30 @@ module.exports = {
         } else if (tokenInfo.expiresAt < new Date) {
           throw new MoleculerClientError('Expired access token.', 401, 'ERR_UNAUTHORIZED', { accessToken });
         }
+
+        return tokenInfo;
+      }
+    },
+    ioAuthenticate: {
+      params: {
+        username: 'string',
+        accessToken: 'string'
+      },
+      visibility: 'published',
+      async handler(ctx) {
+        const { username, accessToken } = ctx.params;
+
+        const tokenInfo = await ctx.call('auth.authorize', { username, accessToken });
+        ctx.meta.socket.$meta.authenticated = true;
+        ctx.meta.socket.$meta.username = username;
+        return tokenInfo;
+      }
+    },
+    ioDeauthenticate: {
+      visibility: 'published',
+      async handler(ctx) {
+        ctx.meta.socket.$meta.authenticated = false;
+        ctx.meta.socket.$meta.username = null;
       }
     }
   },
