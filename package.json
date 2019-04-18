@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "My Moleculer microservices project",
   "scripts": {
-    "dev": "moleculer-runner --repl services",
+    "dev": "CONFIG=../daisy.config.js moleculer-runner --repl services",
     "start": "moleculer-runner",
     "cli": "moleculer connect ",
     "ci": "jest --watch",

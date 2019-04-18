@@ -3,6 +3,8 @@
 const RService = require('@kothique/moleculer-rethinkdbdash');
 const { MoleculerClientError, MoleculerServerError } = require('moleculer').Errors;
 
+const config = require('../../common/config');
+
 const TYPES = require('./types');
 
 module.exports = {
@@ -51,8 +53,31 @@ module.exports = {
       }
     });
 
-    const devices = await this.rTable;
-    devices.forEach(device => this.createDriver(device));
+    await Promise.all((await this.rTable).map(async device => {
+      if (!config.devices[device.id]) {
+        await this.rTable.get(device.id).delete();
+        this.logger.warn(`Device removed: ${device.id}`, device);
+      }
+    }));
+
+    await Promise.all(Object.entries(config.devices).map(async ([id, deviceInfo]) => {
+      const device = await this.rTable.get(id);
+      deviceInfo = { ...deviceInfo };
+      delete deviceInfo.state;
+      if (device) {
+        await this.rTable.get(id).update(deviceInfo);
+        this.logger.debug(`Device updated: ${id}.`, deviceInfo);
+      } else {
+        this.logger.info(`New device created: ${id}`, deviceInfo);
+        await this.rTable.insert({
+          id,
+          state: {},
+          ...deviceInfo
+        });
+      }
+    }));
+
+    (await this.rTable).forEach(device => this.createDriver(device));
   },
   actions: {
     list: {
