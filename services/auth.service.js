@@ -2,31 +2,30 @@
 
 const uuidv4 = require('uuid/v4');
 const bcrypt = require('bcrypt');
-const RService = require('@kothique/moleculer-rethinkdbdash');
+const Datastore = require('nedb-promises');
 const { MoleculerClientError, MoleculerServerError } = require('moleculer').Errors;
 
 module.exports = {
   name: 'auth',
-  mixins: [RService],
   settings: {
     saltRounds: 12,
     tokenLifetime: 1000 * 60 * 60 * 24 // 24 hours
   },
-  rOptions: {
-    db: 'daisy'
-  },
-  rInitial: {
-    daisy: {
-      users: {
-        $default: true,
-        $options: { primaryKey: 'username' }
-      }
-    }
-  },
-  rOnReady() {
-    setInterval(() => this.rTable.update({
-      accessTokens: this.r.row('accessTokens').filter(token => token('expiresAt').ge(new Date))
-    }).run(), 1000 * 60 * 60); // 1 hour
+  async created() {
+    this.store = Datastore.create('./data/auth.nedb');
+
+    await this.store.ensureIndex({ fieldName: 'username', unique: true });
+
+    setInterval(async () => {
+      const users = await this.store.find();
+      await Promise.all(users.map(async user => {
+        await Promise.all(user.accessTokens.map(async tokenInfo => {
+          if (tokenInfo.expiresAt < new Date) {
+            await this.store.update({ _id: user._id }, { $pop: { accessTokens: -1 } });
+          }
+        }));
+      }));
+    }, 1000)//1000 * 60 * 60); // 1 hour
   },
   actions: {
     login: {
@@ -38,7 +37,7 @@ module.exports = {
       async handler(ctx) {
         const { username, password } = ctx.params;
 
-        const user = await this.rTable.get(username);
+        const user = await this.store.findOne({ username });
         if (!user) {
           throw new MoleculerClientError('Wrong login or password.', 401, 'ERR_AUTHENTICATION', { username });
         }
@@ -59,7 +58,7 @@ module.exports = {
       async handler(ctx) {
         const { username } = ctx.params;
 
-        if (!(await this.rTable.get(username))) {
+        if (!(await this.store.findOne({ username }))) {
           throw new MoleculerClientError('User not found.', 404, 'ERR_USER_NOT_FOUND', { username });
         }
 
@@ -76,12 +75,12 @@ module.exports = {
       async handler(ctx) {
         const { username, password } = ctx.params;
 
-        const user = await this.rTable.get(username);
+        const user = await this.store.findOne({ username });
         if (user) {
           throw new MoleculerClientError('Username already in use.', 400, 'ERR_USERNAME_ALREADY_IN_USER', { username });
         }
 
-        await this.rTable.insert({
+        await this.store.insert({
           username,
           passwordHash: await bcrypt.hash(password, this.settings.saltRounds),
           accessTokens: []
@@ -97,12 +96,12 @@ module.exports = {
       async handler(ctx) {
         const { username, accessToken } = ctx.params;
 
-        if (!(await this.rTable.get(username))) {
+        const user = await this.store.findOne({ username });
+        if (!user) {
           throw new MoleculerClientError('User not found.', 404, 'ERR_USER_NOT_FOUND', { username });
         }
 
-        const tokenInfo = await this.rTable.get(username)('accessTokens')
-          .filter({ value: accessToken }).nth(0).default(null);
+        const tokenInfo = user.accessTokens.find(token => token.value === accessToken);
         if (!tokenInfo) {
           throw new MoleculerClientError('Invalid or expired access token.', 401, 'ERR_UNAUTHORIZED', { accessToken });
         } else if (tokenInfo.expiresAt < new Date) {
@@ -145,9 +144,7 @@ module.exports = {
         expiresAt: new Date(now.valueOf() + this.settings.tokenLifetime)
       };
 
-      await this.rTable.get(username).update({
-        accessTokens: this.r.row('accessTokens').append(tokenInfo)
-      });
+      await this.store.update({ username }, { $push: { accessTokens: tokenInfo } });
 
       return tokenInfo;
     }

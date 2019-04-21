@@ -41,10 +41,12 @@
     "moleculer-io": "^1.1.1",
     "moleculer-web": "^0.8.0",
     "msgpack-lite": "^0.1.26",
+    "nedb": "^1.8.0",
+    "nedb-promises": "^3.0.3",
     "uuid": "^3.3.2"
   },
   "engines": {
-    "node": ">= 11.x.x"
+    "node": ">= 10.x.x"
   },
   "jest": {
     "coverageDirectory": "../coverage",
