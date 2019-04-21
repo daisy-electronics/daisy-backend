@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('fs');
 const uuidv4 = require('uuid/v4');
 const bcrypt = require('bcrypt');
 const Datastore = require('nedb-promises');
@@ -12,6 +13,9 @@ module.exports = {
     tokenLifetime: 1000 * 60 * 60 * 24 // 24 hours
   },
   async created() {
+    if (!fs.existsSync('./data')) {
+      fs.mkdirSync('./data');
+    }
     this.store = Datastore.create('./data/auth.nedb');
 
     await this.store.ensureIndex({ fieldName: 'username', unique: true });

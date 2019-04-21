@@ -1,5 +1,1 @@
-{"accessTokens":[{"value":"BOOM","expiresAt":{"$$date":1555877716097}}],"username":"moew","_id":"2zpjZlZVfEPmkkNN"}
-{"username":"kot","passwordHash":"$2b$12$sKqakBYGuCz1zmFlwDfTreRq4kuoD15t.ZLS2xoD36hqrjoWBl2Lu","accessTokens":[],"_id":"faotgq5AwustBnQj"}
 {"$$indexCreated":{"fieldName":"username","unique":true,"sparse":false}}
-{"username":"kot","passwordHash":"$2b$12$sKqakBYGuCz1zmFlwDfTreRq4kuoD15t.ZLS2xoD36hqrjoWBl2Lu","accessTokens":[{"value":"6e728b3b-f42c-46bf-be48-e3f70e323661","expiresAt":{"$$date":1555960631054}}],"_id":"faotgq5AwustBnQj"}
-{"username":"kot","passwordHash":"$2b$12$sKqakBYGuCz1zmFlwDfTreRq4kuoD15t.ZLS2xoD36hqrjoWBl2Lu","accessTokens":[{"value":"6e728b3b-f42c-46bf-be48-e3f70e323661","expiresAt":{"$$date":1555960631054}},{"value":"ebc4f450-35db-4007-b5e0-9ff1c9a9edad","expiresAt":{"$$date":1555960642696}}],"_id":"faotgq5AwustBnQj"}

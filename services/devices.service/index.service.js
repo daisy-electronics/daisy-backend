@@ -1,6 +1,7 @@
 'use strict';
 
-const RService = require('@kothique/moleculer-rethinkdbdash');
+const Datastore = require('nedb-promises');
+const fs = require('fs');
 const { MoleculerClientError, MoleculerServerError } = require('moleculer').Errors;
 
 const config = require('../../common/config');
@@ -9,7 +10,6 @@ const TYPES = require('./types');
 
 module.exports = {
   name: 'devices',
-  mixins: [RService],
   rOptions: {
     db: 'daisy'
   },
@@ -20,70 +20,63 @@ module.exports = {
       }
     }
   },
-  created() {
+  async created() {
     this.drivers = {};
-  },
-  async stopped() {
-    await Promise.all(Object.entries(this.drivers).map(async ([id, driver]) => {
-      await this.rTable.get(id).update({ state: driver.state });
-      driver.dispose();
-      this.logger.info('Driver disposed of.', { deviceId: id, state: driver.state })
-    }));
-  },
-  async rOnReady() {
-    const cursor = await this.rTable.changes({ includeTypes: true });
-    cursor.each(async (error, change) => {
-      if (error) {
-        this.logger.warn(`Error while listening to changes in the 'devices' table.`, { error });
-        return;
-      }
+    if (!fs.existsSync('./data')) {
+      fs.mkdirSync('./data');
+    }
+    this.store = Datastore.create('./data/devices.nedb');
 
-      if (change.type === 'add') {
-        await this.broker.call('gateway.app.broadcast', {
-          subject: 'device.add',
-          data: { device: change.new_val }
-        });
-        this.broker.emit('device.add', { device: change.new_val });
-      } else if (change.type === 'remove') {
+    await Promise.all((await this.store.find()).map(async device => {
+      if (!config.devices[device._id]) {
+        await this.store.remove({ _id: device._id });
+        this.logger.warn(`Device removed: ${device._id}`, device);
+
         await this.broker.call('gateway.app.broadcast', {
           subject: 'device.remove',
-          data: { device: change.old_val }
+          data: { device }
         });
-        this.broker.emit('device.remove', { device: change.old_val });
-      }
-    });
-
-    await Promise.all((await this.rTable).map(async device => {
-      if (!config.devices[device.id]) {
-        await this.rTable.get(device.id).delete();
-        this.logger.warn(`Device removed: ${device.id}`, device);
+        this.broker.emit('device.remove', { device });
       }
     }));
 
     await Promise.all(Object.entries(config.devices).map(async ([id, deviceInfo]) => {
-      const device = await this.rTable.get(id);
+      const device = await this.store.findOne({ _id: id });
       deviceInfo = { ...deviceInfo };
       delete deviceInfo.state;
       if (device) {
-        await this.rTable.get(id).update(deviceInfo);
+        await this.store.update({ _id: id }, { $set: deviceInfo });
         this.logger.debug(`Device updated: ${id}.`, deviceInfo);
       } else {
-        this.logger.info(`New device created: ${id}`, deviceInfo);
-        await this.rTable.insert({
-          id,
+        const doc = await this.store.insert({
+          _id: id,
           state: {},
           ...deviceInfo
         });
+        this.logger.info(`New device created: ${id}`, deviceInfo);
+
+        await this.broker.call('gateway.app.broadcast', {
+          subject: 'device.add',
+          data: { device: doc }
+        });
+        this.broker.emit('device.add', { device: doc });
       }
     }));
 
-    (await this.rTable).forEach(device => this.createDriver(device));
+    (await this.store.find()).forEach(device => this.createDriver(device));
+  },
+  async stopped() {
+    await Promise.all(Object.entries(this.drivers).map(async ([id, driver]) => {
+      await this.store.update({ _id: id }, { $set: { state: driver.state } });
+      driver.dispose();
+      this.logger.info('Driver disposed of.', { deviceId: id, state: driver.state })
+    }));
   },
   actions: {
     list: {
       visibility: 'published',
       async handler(ctx) {
-        const devices = await this.rTable;
+        const devices = await this.store.find();
         return devices;
       }
     },
@@ -143,7 +136,7 @@ module.exports = {
   },
   methods: {
     async getDevice(deviceId) {
-      const device = await this.rTable.get(deviceId);
+      const device = await this.store.findOne({ _id: deviceId });
       if (!device) {
         throw new MoleculerClientError('Device not found.', 404, 'ERR_DEVICE_NOT_FOUND', { deviceId });
       }
@@ -153,20 +146,20 @@ module.exports = {
     getDeviceType(device) {
       const type = TYPES[device.type];
       if (!type) {
-        throw new MoleculerServerError('Invalid device type.', 500, 'ERR_INVALID_DEVICE_TYPE', { deviceId: device.id, type });
+        throw new MoleculerServerError('Invalid device type.', 500, 'ERR_INVALID_DEVICE_TYPE', { deviceId: device._id, type });
       }
 
       return type;
     },
     createDriver(device) {
-      const { id, data, state } = device;
+      const { _id, data, state } = device;
 
       const type = this.getDeviceType(device);
       const driver = new type.class({
-        id,
+        id: _id,
         state,
         getDevice: async deviceId => {
-          const device = await this.rTable.get(deviceId);
+          const device = await this.store.findOne({ _id: deviceId });
           if (!device) {
             throw new MoleculerServerError('Device not found.', 500, 'ERR_DEVICE_NOT_FOUND', { deviceId });
           }
@@ -174,16 +167,16 @@ module.exports = {
           return device;
         },
       }, data);
-      this.logger.info('Driver created.', { deviceId: id, type: device.type });
+      this.logger.info('Driver instantiated.', { deviceId: _id, type: device.type });
 
       driver.variables.forEach(variable => driver.on(variable, async value => {
-        await this.rTable.get(id).update({
-          state: this.r.row('state').merge({ [variable]: value })
+        await this.store.update({ _id }, {
+          $set: { [`state.${variable}`]: value }
         });
-        this.broker.emit('device.state-change', { deviceId: id, variable, value });
+        this.broker.emit('device.state-change', { deviceId: _id, variable, value });
       }));
 
-      this.drivers[id] = driver;
+      this.drivers[_id] = driver;
     }
   }
 };
