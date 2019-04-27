@@ -10,3 +10,5 @@ function streamToBuffer(stream) {
   });
 }
 module.exports.streamToBuffer = streamToBuffer;
+
+module.exports.EMPTY_FUNCTION = function () {};

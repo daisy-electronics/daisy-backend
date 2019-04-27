@@ -6,18 +6,18 @@ module.exports = {
     this.subscribers = {};
   },
   events: {
-    async 'device.state-change'({ deviceId, variable, value }) {
+    async 'view.state-change'({ viewId, variable, value }) {
       await Promise.all(Object.keys(this.subscribers).map(async socketId => {
         const { socket, subscriptions } = this.subscribers[socketId];
         if (!socket.$meta.authenticated) {
           return;
         }
 
-        if (`${deviceId}/${variable}` in subscriptions) {
+        if (`${viewId}/${variable}` in subscriptions) {
           await this.broker.call('gateway.app.emit', {
             socketId,
-            subject: 'device-state-change',
-            data: { deviceId, variable, value }
+            subject: 'view-state-change',
+            data: { viewId, variable, value }
           });
         }
       }));

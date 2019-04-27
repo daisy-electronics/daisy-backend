@@ -60,14 +60,14 @@ module.exports = {
 				}
 			},
 			{
-				path: '/device/',
+				path: '/view/',
 				mappingPolicy: 'restrict',
 				authorization: true,
 				whitelist: [/.*/],
 				aliases: {
-					'GET :deviceId': 'devices.get',
-					'GET :deviceId/:variable': 'devices.getVariable',
-					'POST :deviceId/:action': 'devices.dispatchAction'
+					'GET :viewId': 'views.get',
+					'GET :viewId/:variable': 'views.getVariable',
+					'POST :viewId/:action': 'views.dispatchAction'
 				},
 				bodyParsers: {
 					json: true
@@ -86,7 +86,7 @@ module.exports = {
 				whitelist: [/.*/],
 				aliases: {
 					'POST login': 'auth.login',
-					'GET devices': 'devices.list',
+					'GET views': 'views.list',
 					'POST shutdown': 'admin.shutdown',
 					'POST api-gateway/shutdown': 'admin.shutdownAPIGateway'
 				},
