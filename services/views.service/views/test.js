@@ -13,6 +13,12 @@ module.exports = {
   },
   variables: {
     temperature() {
+      return this.getTemp();
+    }
+  },
+  methods: {
+    getTemp() {
+      this.logger.info('BOOM!')
       return this.state.temperature;
     }
   }

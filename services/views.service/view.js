@@ -5,25 +5,30 @@ const { EMPTY_FUNCTION } = require('../../common/util');
 
 module.exports = class View extends EventEmitter {
   /**
-   * @param {object}    scheme
-   * @param {string}    scheme.id
-   * @param {?function} scheme.created
-   * @param {?function} scheme.destroyed
-   * @param {?object}   scheme.variables
-   * @param {?object}   scheme.actions
-   * @param {object}    state
-   * @param {object}    options
-   * @param {object}    options.logger
+   * @param {object}            scheme
+   * @param {string}            scheme.id
+   * @param {?function}         scheme.created
+   * @param {?function}         scheme.destroyed
+   * @param {?object<function>} scheme.methods
+   * @param {?object}           scheme.variables
+   * @param {?object}           scheme.actions
+   * @param {object}            state
+   * @param {object}            options
+   * @param {object}            options.logger
    */
   constructor(scheme, state, options) {
     super();
+
+    this.state = state;
+    this.logger = options.logger;
 
     this.id = scheme.id;
     this._created = scheme.created || EMPTY_FUNCTION;
     this._destroyed = scheme.destroyed || EMPTY_FUNCTION;
 
-    this.state = state;
-    this.logger = options.logger;
+    Object.entries(scheme.methods || {}).forEach(([name, method]) => {
+      this[name] = method;
+    });
 
     this.variables = [];
     this._getters = {};
