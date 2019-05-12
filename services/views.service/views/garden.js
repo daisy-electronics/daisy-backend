@@ -2,15 +2,11 @@ module.exports = {
   id: 'garden',
   created() {
     this.state = this.state || { moisture0: 0, moisture1: 0 };
-    this.intervalId = setInterval(async () => {
-      this.state.moisture0 = await this.call('board.getSoilMoisture', { sensorId: '0' });
-      this.state.moisture1 = await this.call('board.getSoilMoisture', { sensorId: '1' });
-      this.emit('moisture0', this.state.moisture0);
-      this.emit('moisture1', this.state.moisture1);
-    }, 1000);
+    this.timeoutId = null;
+    setTimeout(() => this.update(), 1000);
   },
   destroyed() {
-    clearInterval(this.intervalId);
+    clearTimeout(this.timeoutId);
   },
   variables: {
     moisture0() {
@@ -42,6 +38,14 @@ module.exports = {
     },
     getVentilation() {
       return this.call('board.getRelay', { relayId: '6' });
+    },
+    async update() {
+      this.state.moisture0 = await this.call('board.getSoilMoisture', { sensorId: '0' });
+      this.state.moisture1 = await this.call('board.getSoilMoisture', { sensorId: '1' });
+      this.emit('moisture0', this.state.moisture0);
+      this.emit('moisture1', this.state.moisture1);
+
+      this.timeoutId = setTimeout(() => this.update(), 1000);
     }
   }
 };
