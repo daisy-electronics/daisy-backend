@@ -1,0 +1,117 @@
+'use strict';
+
+const { MoleculerServerError } = require('moleculer').Errors;
+
+const PACKET_MAX_LENGTH = 48 - 1; // this 1 is the terminating '\0' from C
+const REQUEST_ID_MAX_LENGTH = 8;
+const SUBJECT_MAX_LENGTH = 16;
+const MESSAGE_MAX_LENGTH = PACKET_MAX_LENGTH - REQUEST_ID_MAX_LENGTH - SUBJECT_MAX_LENGTH - 1 - 1;
+
+const EVENT = 0;
+const REQUEST = 1;
+const SUCCESS_RESPONSE = 2;
+const FAILURE_RESPONSE = 3;
+const INVALID = 9;
+
+const EVENT_ERROR = 0;
+const EVENT_WARNING = 1;
+
+const ERROR_MESSAGE_TOO_LONG = 0;
+const ERROR_INVALID_RELAY_ID = 1;
+const ERROR_INVALID_SOIL_MOISTURE_SENSOR_ID = 2;
+
+const REQUEST_SET_RELAY = 0;
+const REQUEST_SOIL_MOISTURE = 1;
+
+function parsePacket(str) {
+  if (str[0] === `${EVENT}`) {
+    const res = str.match(
+      new RegExp(`^${EVENT}(.+?)(\\|(.*))?$`)
+    );
+    if (!res) {
+      return { type: INVALID, reason: 'invalid packet' };
+    }
+    const [, subject,, message] = res;
+
+    return {
+      type: EVENT,
+      subject,
+      message
+    };
+  } else if (str[0] === `${REQUEST}`) {
+    const res = str.match(
+      new RegExp(`^${REQUEST}(\\d+)\\|(.+?)(\\|(.*))?$`)
+    );
+    if (!res) {
+      return { type: INVALID, reason: 'invalid packet' };
+    }
+    const [, requestId, subject,, message] = res;
+
+    return {
+      type: REQUEST,
+      requestId: Number(requestId),
+      subject,
+      message
+    };
+  } else if (str[0] === `${SUCCESS_RESPONSE}`) {
+    const res = str.match(
+      new RegExp(`^${SUCCESS_RESPONSE}(\\d+)(\\|(.*))?$`)
+    );
+    if (!res) {
+      return { type: INVALID, reason: 'invalid packet' };
+    }
+    const [, requestId,, message] = res;
+
+    return {
+      type: SUCCESS_RESPONSE,
+      requestId: Number(requestId),
+      message
+    };
+  } else if (str[0] === `${FAILURE_RESPONSE}`) {
+    const res = str.match(
+      new RegExp(`^${FAILURE_RESPONSE}(\\d+)(\\|(.*))?$`)
+    );
+    if (!res) {
+      return { type: INVALID, reason: 'invalid packet' };
+    }
+    const [, requestId,, message] = res;
+
+    return {
+      type: FAILURE_RESPONSE,
+      requestId: Number(requestId),
+      message
+    };
+  } else {
+    return { type: INVALID, reason: 'invalid type' };
+  }
+}
+
+function createEvent(subject, message = undefined) {
+  return `${EVENT}${subject}${message ? '|'+message : ''}`;
+}
+
+function createRequest(requestId, subject, message = undefined) {
+  return `${REQUEST}${requestId}|${subject}${message ? '|'+message : ''}`;
+}
+
+function createSuccessResponse(requestId, message = undefined) {
+  return `${SUCCESS_RESPONSE}${requestId}${message ? '|'+message : ''}`;
+}
+
+function createFailureResponse(requestId, message = undefined) {
+  return `${FAILURE_RESPONSE}${requestId}${message ? '|'+message : ''}`;
+}
+
+module.exports = {
+  parsePacket,
+  createEvent,
+  createRequest,
+  createSuccessResponse,
+  createFailureResponse,
+
+  EVENT, REQUEST, SUCCESS_RESPONSE, FAILURE_RESPONSE, INVALID,
+  PACKET_MAX_LENGTH, REQUEST_ID_MAX_LENGTH, SUBJECT_MAX_LENGTH, MESSAGE_MAX_LENGTH,
+  EVENT_ERROR, EVENT_WARNING,
+  ERROR_MESSAGE_TOO_LONG,
+  REQUEST_SET_RELAY, REQUEST_SOIL_MOISTURE
+};

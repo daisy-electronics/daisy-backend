@@ -33,6 +33,7 @@
     "moleculer-repl": "^0.5.3"
   },
   "dependencies": {
+    "@serialport/parser-readline": "^2.0.2",
     "async-busboy": "^0.7.0",
     "bcrypt": "^3.0.5",
     "http-range": "^1.0.0",
@@ -42,6 +43,7 @@
     "msgpack-lite": "^0.1.26",
     "nedb": "^1.8.0",
     "nedb-promises": "^3.0.3",
+    "serialport": "^7.1.5",
     "uuid": "^3.3.2"
   },
   "engines": {

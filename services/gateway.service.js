@@ -2,10 +2,9 @@
 
 const ApiGateway = require('moleculer-web');
 const SocketIOService = require('moleculer-io');
-const { MoleculerError } = require('moleculer').Errors;
 const asyncBusboy = require('async-busboy');
 const { Range, ContentRange } = require('http-range');
-const { MoleculerClientError } = require('moleculer').Errors;
+const { MoleculerError, MoleculerClientError } = require('moleculer').Errors;
 
 const TOKEN_VERIFY_INTERVAL = 1000 * 60; // 1 minute
 
