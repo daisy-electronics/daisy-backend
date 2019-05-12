@@ -112,6 +112,26 @@ module.exports = {
         return this.sendRequest(Protocol.REQUEST_SET_RELAY, `${relayId}${state ? '1' : '0'}`);
       }
     },
+    getRelay: {
+      params: {
+        relayId: 'string'
+      },
+      visibility: 'public',
+      handler(ctx) {
+        const { relayId } = ctx.params;
+        return this.sendRequest(Protocol.REQUEST_GET_RELAY, relayId);
+      }
+    },
+    toggleRelay: {
+      params: {
+        relayId: 'string'
+      },
+      visibility: 'public',
+      handler(ctx) {
+        const { relayId } = ctx.params;
+        return this.sendRequest(Protocol.REQUEST_TOGGLE_RELAY, relayId);
+      }
+    },
     getSoilMoisture: {
       params: {
         sensorId: 'string'

@@ -44,7 +44,8 @@ module.exports = {
 
         const state = viewInfo ? viewInfo.state : undefined;
         const view = this.views[scheme.id] = new View(scheme, state, {
-          logger: this.logger
+          logger: this.logger,
+          call: (...args) => this.broker.call(...args)
         });
 
         this.logger.info('View instance created.', { viewId: scheme.id });

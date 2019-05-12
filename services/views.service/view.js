@@ -15,12 +15,14 @@ module.exports = class View extends EventEmitter {
    * @param {object}            state
    * @param {object}            options
    * @param {object}            options.logger
+   * @param {object}            options.call
    */
   constructor(scheme, state, options) {
     super();
 
     this.state = state;
     this.logger = options.logger;
+    this.call = options.call
 
     this.id = scheme.id;
     this._created = scheme.created || EMPTY_FUNCTION;
