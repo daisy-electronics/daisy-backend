@@ -1,3 +1,5 @@
+'use strict';
+
 module.exports = {
   id: 'garden',
   created() {
@@ -7,7 +9,8 @@ module.exports = {
       humidity0: 0,
       temperature0: 0,
       humidity1: 0,
-      temperature1: 0
+      temperature1: 0,
+      temperature2: 0
     };
 
     this.events.on('soil-moisture', ({ sensorId, moisture }) => {
@@ -21,6 +24,11 @@ module.exports = {
 
       this.state[`temperature${sensorId}`] = temperature;
       this.emit(`temperature${sensorId}`, temperature);
+    });
+
+    this.events.on('ds18b20', ({ sensorId, temperature }) => {
+      this.state[`temperature${sensorId + 2}`] = temperature;
+      this.emit(`temperature${sensorId + 2}`, temperature);
     });
   },
   variables: {
@@ -41,6 +49,9 @@ module.exports = {
     },
     temperature1() {
       return this.state.temperature1;
+    },
+    temperature2() {
+      return this.state.temperature2;
     },
     lamp() {
       return this.getLamp();

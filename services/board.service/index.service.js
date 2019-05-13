@@ -126,6 +126,9 @@ module.exports = {
         } else if (packet.subject === Protocol.EVENT_DHT) {
           const [sensorId, humidity, temperature] = packet.message.split('|').map(Number);
           this.broker.emit('board.dht', { sensorId, humidity, temperature });
+        } else if (packet.subject === Protocol.EVENT_DS18B20) {
+          const [sensorId, temperature] = packet.message.split('|').map(Number);
+          this.broker.emit('board.ds18b20', { sensorId, temperature });
         }
       } else if (packet.type === Protocol.REQUEST) {
         // nothing to do, because Board cannot send a request (yet?)
@@ -195,6 +198,16 @@ module.exports = {
         const [humidity, temperature] = result.split('|');
 
         return { humidity: Number(humidity), temperature: Number(temperature) };
+      }
+    },
+    readDS18B20: {
+      params: {
+        sensorId: 'string'
+      },
+      visibility: 'public',
+      handler(ctx) {
+        const { sensorId } = ctx.params;
+        return this.sendRequest(Protocol.REQUEST_READ_DS18B20, sensorId);
       }
     }
   }

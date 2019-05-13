@@ -1,3 +1,5 @@
+'use strict';
+
 const EventEmitter = require('events');
 const { MoleculerClientError, MoleculerServerError } = require('moleculer').Errors;
 
