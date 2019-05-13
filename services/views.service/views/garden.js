@@ -41,10 +41,14 @@ module.exports = {
       return this.call('board.getRelay', { relayId: '6' });
     },
     async update() {
-      this.state.moisture0 = await this.call('board.getSoilMoisture', { sensorId: '0' });
-      this.state.moisture1 = await this.call('board.getSoilMoisture', { sensorId: '1' });
-      this.emit('moisture0', this.state.moisture0);
-      this.emit('moisture1', this.state.moisture1);
+      try {
+        this.state.moisture0 = await this.call('board.getSoilMoisture', { sensorId: '0' });
+        this.state.moisture1 = await this.call('board.getSoilMoisture', { sensorId: '1' });
+        this.emit('moisture0', this.state.moisture0);
+        this.emit('moisture1', this.state.moisture1);
+      } catch (error) {
+        this.logger.warn(`Failed to read soil moisture in Garden.`, { sendorIds: ['0', '1'] });
+      }
 
       this.timeoutId = setTimeout(() => this.update(), 1000);
     }

@@ -18,34 +18,66 @@ module.exports = {
 
     this.pendingRequests = {};
     this.nextRequestId = 0;
+
+    this.open = false;
+    this.reconnecting = false;
   },
   started() {
-    this.port = new SerialPort(this.settings.serialPort, {
-      baudRate: this.settings.baudRate
-    });
-    this.parser = this.port.pipe(new ReadLine({ delimiter: '\n' }));
-    
-    this.port.on('open', () => {
-      this.logger.info(`Serial port ${this.settings.serialPort} is open.`);
-    });
-
-    this.parser.on('data', packetString => {
-      packetString = packetString.substr(0, packetString.length - 1); // get rid of '\r' at the end
-
-      const packet = Protocol.parsePacket(packetString);
-      if (packet.type === Protocol.INVALID) {
-        this.logger.warn(`Failed to parse a packet: ${packet.reason}.`, { packet: packetString });
-        return;
-      }
-      this.logger.debug(`Received packet.`, { packet });
-
-      this.handlePacket(packet);
-    });
+    this.connect();
   },
   stopped() {
-    this.port.end();
+    if (this.port) {
+      this.port.end();
+    }
   },
   methods: {
+    connect() {
+      this.port = new SerialPort(this.settings.serialPort, {
+        baudRate: this.settings.baudRate
+      });
+      this.parser = this.port.pipe(new ReadLine({ delimiter: '\r\n' }));
+      this.reconnecting = false;
+
+      this.port.on('open', () => {
+        this.open = true;
+        this.logger.info(`Serial port ${this.settings.serialPort} is open.`);
+      });
+
+      this.port.on('error', error => {
+        if (!this.reconnecting) {
+          this.reconnecting = true;
+          this.open = false;
+          this.port.end();
+          this.parser.end();
+          this.port = null;
+          this.logger.warn(`Serial port ${this.settings.serialPort} error. Reconnecting...`, { error });
+          setTimeout(() => this.connect(), 2000);
+        }
+      });
+
+      this.port.on('close', () => {
+        if (!this.reconnecting) {
+          this.reconnecting = true;
+          this.open = false;
+          this.port.end();
+          this.parser.end();
+          this.port = null;
+          this.logger.warn(`Serial port connection ${this.settings.serialPort} is closed. Reconnecting...`);
+          setTimeout(() => this.connect(), 2000);
+        }
+      });
+
+      this.parser.on('data', packetString => {
+        const packet = Protocol.parsePacket(packetString);
+        if (packet.type === Protocol.INVALID) {
+          this.logger.warn(`Failed to parse a packet: ${packet.reason}.`, { packet: packetString });
+          return;
+        }
+        this.logger.debug(`Received packet.`, { packet });
+
+        this.handlePacket(packet);
+      });
+    },
     sendRequest(subject, message = undefined) {
       const requestId = this.nextRequestId++;
       const promise = new Promise((resolve, reject) =>
@@ -63,13 +95,17 @@ module.exports = {
 
     sendPacket(packetString) {
       if (packetString.length > Protocol.PACKET_MAX_LENGTH) {
-        throw new MoleculerServerError(`Invalid packet: too long.`, null, 'ERR_PACKET_TOO_LONG', { packet });
+        throw new MoleculerServerError(`Invalid packet: too long.`, null, 'ERR_PACKET_TOO_LONG', { packet: packetString });
       }
 
       return new Promise((resolve, reject) => {
+        if (!this.port) {
+          return reject(new MoleculerServerError('Failed to send a packet: port is closed.', null, 'ERR_PORT_CLOSED', { packet: packetString }));
+        }
+
         this.port.write(`${packetString}\n`, err => {
           if (err) {
-            return reject(new MoleculerServerError('Failed to send a packet.', null, 'ERR_SEND_PACKET', { packet }));
+            return reject(new MoleculerServerError('Failed to send a packet.', null, 'ERR_SEND_PACKET', { packet: packetString }));
           }
 
           this.logger.debug(`Packet sent.`, { packetString });
