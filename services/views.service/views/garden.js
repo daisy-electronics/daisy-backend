@@ -1,12 +1,27 @@
 module.exports = {
   id: 'garden',
   created() {
-    this.state = this.state || { moisture0: 0, moisture1: 0 };
-    this.timeoutId = null;
-    setTimeout(() => this.update(), 1000);
-  },
-  destroyed() {
-    clearTimeout(this.timeoutId);
+    this.state = this.state || {
+      moisture0: 0,
+      moisture1: 0,
+      humidity0: 0,
+      temperature0: 0,
+      humidity1: 0,
+      temperature1: 0
+    };
+
+    this.events.on('soil-moisture', ({ sensorId, moisture }) => {
+      this.state[`moisture${sensorId}`] = moisture;
+      this.emit(`moisture${sensorId}`, moisture);
+    });
+
+    this.events.on('dht', ({ sensorId, humidity, temperature }) => {
+      this.state[`humidity${sensorId}`] = humidity;
+      this.emit(`humidity${sensorId}`, humidity);
+
+      this.state[`temperature${sensorId}`] = temperature;
+      this.emit(`temperature${sensorId}`, temperature);
+    });
   },
   variables: {
     moisture0() {
@@ -14,6 +29,18 @@ module.exports = {
     },
     moisture1() {
       return this.state.moisture1;
+    },
+    humidity0() {
+      return this.state.humidity0;
+    },
+    temperature0() {
+      return this.state.temperature0;
+    },
+    humidity1() {
+      return this.state.humidity1;
+    },
+    temperature1() {
+      return this.state.temperature1;
     },
     lamp() {
       return this.getLamp();
@@ -39,18 +66,6 @@ module.exports = {
     },
     getVentilation() {
       return this.call('board.getRelay', { relayId: '6' });
-    },
-    async update() {
-      try {
-        this.state.moisture0 = await this.call('board.getSoilMoisture', { sensorId: '0' });
-        this.state.moisture1 = await this.call('board.getSoilMoisture', { sensorId: '1' });
-        this.emit('moisture0', this.state.moisture0);
-        this.emit('moisture1', this.state.moisture1);
-      } catch (error) {
-        this.logger.warn(`Failed to read soil moisture in Garden.`, { sendorIds: ['0', '1'] });
-      }
-
-      this.timeoutId = setTimeout(() => this.update(), 1000);
     }
   }
 };

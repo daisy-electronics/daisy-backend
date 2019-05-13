@@ -22,7 +22,8 @@ module.exports = class View extends EventEmitter {
 
     this.state = state;
     this.logger = options.logger;
-    this.call = options.call
+    this.call = options.call;
+    this.events = new EventEmitter;
 
     this.id = scheme.id;
     this._created = scheme.created || EMPTY_FUNCTION;

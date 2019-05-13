@@ -120,6 +120,12 @@ module.exports = {
           this.logger.error(`From Board.`, { message: packet.message });
         } else if (packet.subject === Protocol.EVENT_WARNING) {
           this.logger.warn(`From Board.`, { message: packet.message });
+        } else if (packet.subject === Protocol.EVENT_SOIL_MOISTURE) {
+          const [sensorId, moisture] = packet.message.split('|').map(Number);
+          this.broker.emit('board.soil-moisture', { sensorId, moisture });
+        } else if (packet.subject === Protocol.EVENT_DHT) {
+          const [sensorId, humidity, temperature] = packet.message.split('|').map(Number);
+          this.broker.emit('board.dht', { sensorId, humidity, temperature });
         }
       } else if (packet.type === Protocol.REQUEST) {
         // nothing to do, because Board cannot send a request (yet?)
@@ -176,6 +182,19 @@ module.exports = {
       handler(ctx) {
         const { sensorId } = ctx.params;
         return this.sendRequest(Protocol.REQUEST_SOIL_MOISTURE, sensorId);
+      }
+    },
+    readDHT: {
+      params: {
+        sensorId: 'string'
+      },
+      visibility: 'public',
+      async handler(ctx) {
+        const { sensorId } = ctx.params;
+        const result = await this.sendRequest(Protocol.REQUEST_READ_DHT, sensorId);
+        const [humidity, temperature] = result.split('|');
+
+        return { humidity: Number(humidity), temperature: Number(temperature) };
       }
     }
   }

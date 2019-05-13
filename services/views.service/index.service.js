@@ -3,6 +3,7 @@
 const Datastore = require('nedb-promises');
 const fs = require('fs');
 const path = require('path');
+const EventEmitter = require('events');
 const { MoleculerClientError, MoleculerServerError } = require('moleculer').Errors;
 
 const View = require('./view');
@@ -17,6 +18,12 @@ module.exports = {
       views: {
         $default: true
       }
+    }
+  },
+  events: {
+    '**'(data, sender, event) {
+      Object.values(this.views).forEach(view =>
+        view.events.emit(event.substr('board.'.length), data));
     }
   },
   async created() {
