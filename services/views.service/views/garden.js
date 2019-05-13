@@ -28,6 +28,7 @@ module.exports = {
       this.emit('lamp', await this.getLamp());
     },
     async toggleVentilation(state) {
+      await this.call('board.toggleRelay', { relayId: '5' });
       await this.call('board.toggleRelay', { relayId: '6' });
       this.emit('ventilation', await this.getVentilation());
     }
