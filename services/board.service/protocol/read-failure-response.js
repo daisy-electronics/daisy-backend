@@ -4,7 +4,10 @@ const { STATE, LENGTH, ERROR, PACKET_TYPE, INBOUND_EVENT, INBOUND_EVENT_NAME,
   OUTBOUND_EVENT, OUTBOUND_REQUEST } = require('./constants');
 
 module.exports = function (data, events) {
-  function readError(length, bit) {
+  function readError(constants, bit) {
+    const length = constants.ERROR;
+    const redundantBits = constants.REDUNDANT;
+
     // get ready to read data
     if (bit === null) {
       data.error = new Uint8Array(length);
@@ -16,14 +19,14 @@ module.exports = function (data, events) {
     }
     data.i++;
 
-    if (data.i === length) {
+    if (data.i === length + redundantBits) {
       data.error = Bits.toNumber(data.error);
       return true;
     }
   }
 
   function readSetRelay(bit) {
-    if (readError(LENGTH.SET_RELAY.ERROR, bit)) {
+    if (readError(LENGTH.FAILURE_RESPONSE.SET_RELAY, bit)) {
       events.emit('response', 'failure', data.error);
       data.pendingRequest = null;
       data.state = STATE.IDLE;
@@ -31,7 +34,7 @@ module.exports = function (data, events) {
   }
 
   function readGetRelay(bit) {
-    if (readError(LENGTH.GET_RELAY.ERROR, bit)) {
+    if (readError(LENGTH.FAILURE_RESPONSE.GET_RELAY, bit)) {
       events.emit('response', 'failure', data.error);
       data.pendingRequest = null;
       data.state = STATE.IDLE;
@@ -39,7 +42,7 @@ module.exports = function (data, events) {
   }
 
   function readToggleRelay(bit) {
-    if (readError(LENGTH.TOGGLE_RELAY.ERROR, bit)) {
+    if (readError(LENGTH.FAILURE_RESPONSE.TOGGLE_RELAY, bit)) {
       events.emit('response', 'failure', data.error);
       data.pendingRequest = null;
       data.state = STATE.IDLE;
@@ -47,7 +50,7 @@ module.exports = function (data, events) {
   }
 
   function readGetSoilMoisture(bit) {
-    if (readError(LENGTH.GET_SOIL_MOISTURE.ERROR, bit)) {
+    if (readError(LENGTH.FAILURE_RESPONSE.GET_SOIL_MOISTURE, bit)) {
       events.emit('response', 'failure', data.error);
       data.pendingRequest = null;
       data.state = STATE.IDLE;
@@ -55,7 +58,7 @@ module.exports = function (data, events) {
   }
 
   function readGetDHT(bit) {
-    if (readError(LENGTH.GET_DHT.ERROR, bit)) {
+    if (readError(LENGTH.FAILURE_RESPONSE.GET_DHT, bit)) {
       events.emit('response', 'failure', data.error);
       data.pendingRequest = null;
       data.state = STATE.IDLE;
@@ -63,7 +66,7 @@ module.exports = function (data, events) {
   }
 
   function readGetDS18B20(bit) {
-    if (readError(LENGTH.GET_DS18B20.ERROR, bit)) {
+    if (readError(LENGTH.FAILURE_RESPONSE.GET_DS18B20, bit)) {
       events.emit('response', 'failure', data.error);
       data.pendingRequest = null;
       data.state = STATE.IDLE;

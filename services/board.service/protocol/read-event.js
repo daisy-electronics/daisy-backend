@@ -7,20 +7,20 @@ module.exports = function (data, events) {
   function readSoilMoisture(bit) {
     // get ready for reading data
     if (bit === null) {
-      data.sensorId = new Uint8Array(LENGTH.SOIL_MOISTURE.SENSOR_ID);
-      data.moisture = new Uint8Array(LENGTH.SOIL_MOISTURE.MOISTURE);
+      data.sensorId = new Uint8Array(LENGTH.EVENT.SOIL_MOISTURE.SENSOR_ID);
+      data.moisture = new Uint8Array(LENGTH.COMMON.SOIL_MOISTURE.MOISTURE);
       return;
     }
 
-    if (data.i < LENGTH.SOIL_MOISTURE.SENSOR_ID) {
+    if (data.i < LENGTH.EVENT.SOIL_MOISTURE.SENSOR_ID) {
       data.sensorId[data.i] = bit;
-    } else if (data.i < LENGTH.SOIL_MOISTURE.SENSOR_ID + LENGTH.SOIL_MOISTURE.MOISTURE) {
-      data.moisture[data.i - LENGTH.SOIL_MOISTURE.SENSOR_ID] = bit;
+    } else if (data.i < LENGTH.EVENT.SOIL_MOISTURE.SENSOR_ID + LENGTH.COMMON.SOIL_MOISTURE.MOISTURE) {
+      data.moisture[data.i - LENGTH.EVENT.SOIL_MOISTURE.SENSOR_ID] = bit;
     }
     data.i++;
 
-    if (data.i === LENGTH.SOIL_MOISTURE.SENSOR_ID + LENGTH.SOIL_MOISTURE.MOISTURE
-        + LENGTH.SOIL_MOISTURE.REDUNDANT) {
+    if (data.i === LENGTH.EVENT.SOIL_MOISTURE.SENSOR_ID + LENGTH.COMMON.SOIL_MOISTURE.MOISTURE
+        + LENGTH.EVENT.SOIL_MOISTURE.REDUNDANT) {
       data.sensorId = Bits.toNumber(data.sensorId);
       data.moisture = Bits.toNumber(data.moisture);
       events.emit(INBOUND_EVENT_NAME.SOIL_MOISTURE, data.sensorId, data.moisture);
@@ -31,23 +31,23 @@ module.exports = function (data, events) {
   function readDHT(bit) {
     // get ready for reading data
     if (bit === null) {
-      data.sensorId = new Uint8Array(LENGTH.DHT.SENSOR_ID);
-      data.humidity = new Uint8Array(LENGTH.DHT.HUMIDITY);
-      data.temperature = new Uint8Array(LENGTH.DHT.TEMPERATURE);
+      data.sensorId = new Uint8Array(LENGTH.EVENT.DHT.SENSOR_ID);
+      data.humidity = new Uint8Array(LENGTH.COMMON.DHT.HUMIDITY);
+      data.temperature = new Uint8Array(LENGTH.COMMON.DHT.TEMPERATURE);
       return;
     }
 
-    if (data.i < LENGTH.DHT.SENSOR_ID) {
+    if (data.i < LENGTH.EVENT.DHT.SENSOR_ID) {
       data.sensorId[data.i] = bit;
-    } else if (data.i < LENGTH.DHT.SENSOR_ID + LENGTH.DHT.HUMIDITY) {
-      data.humidity[data.i - LENGTH.DHT.SENSOR_ID] = bit;
-    } else if (data.i < LENGTH.DHT.SENSOR_ID + LENGTH.DHT.HUMIDITY + LENGTH.DHT.TEMPERATURE) {
-      data.temperature[data.i - LENGTH.DHT.SENSOR_ID - LENGTH.DHT.HUMIDITY] = bit;
+    } else if (data.i < LENGTH.EVENT.DHT.SENSOR_ID + LENGTH.COMMON.DHT.HUMIDITY) {
+      data.humidity[data.i - LENGTH.EVENT.DHT.SENSOR_ID] = bit;
+    } else if (data.i < LENGTH.EVENT.DHT.SENSOR_ID + LENGTH.COMMON.DHT.HUMIDITY + LENGTH.COMMON.DHT.TEMPERATURE) {
+      data.temperature[data.i - LENGTH.EVENT.DHT.SENSOR_ID - LENGTH.COMMON.DHT.HUMIDITY] = bit;
     }
     data.i++;
 
-    if (data.i === LENGTH.DHT.SENSOR_ID + LENGTH.DHT.HUMIDITY + LENGTH.DHT.TEMPERATURE
-        + LENGTH.DHT.REDUNDANT) {
+    if (data.i === LENGTH.EVENT.DHT.SENSOR_ID + LENGTH.COMMON.DHT.HUMIDITY + LENGTH.COMMON.DHT.TEMPERATURE
+        + LENGTH.EVENT.DHT.REDUNDANT) {
       data.sensorId = Bits.toNumber(data.sensorId);
       data.humidity = Bits.toNumber(data.humidity);
       data.temperature = Bits.toNumber(data.temperature) / 2 - 40;
@@ -59,20 +59,20 @@ module.exports = function (data, events) {
   function readDS18B20(bit) {
     // get ready for reading data
     if (bit === null) {
-      data.sensorId = new Uint8Array(LENGTH.DS18B20.SENSOR_ID);
-      data.temperature = new Uint8Array(LENGTH.DS18B20.TEMPERATURE);
+      data.sensorId = new Uint8Array(LENGTH.EVENT.DS18B20.SENSOR_ID);
+      data.temperature = new Uint8Array(LENGTH.COMMON.DS18B20.TEMPERATURE);
       return;
     }
 
-    if (data.i < LENGTH.DS18B20.SENSOR_ID) {
+    if (data.i < LENGTH.EVENT.DS18B20.SENSOR_ID) {
       data.sensorId[data.i] = bit;
-    } else if (data.i < LENGTH.DS18B20.SENSOR_ID + LENGTH.DS18B20.TEMPERATURE) {
-      data.temperature[data.i - LENGTH.DS18B20.SENSOR_ID] = bit;
+    } else if (data.i < LENGTH.EVENT.DS18B20.SENSOR_ID + LENGTH.COMMON.DS18B20.TEMPERATURE) {
+      data.temperature[data.i - LENGTH.EVENT.DS18B20.SENSOR_ID] = bit;
     }
     data.i++;
 
-    if (data.i === LENGTH.DS18B20.SENSOR_ID + LENGTH.DS18B20.TEMPERATURE
-      + LENGTH.DS18B20.REDUNDANT) {
+    if (data.i === LENGTH.EVENT.DS18B20.SENSOR_ID + LENGTH.COMMON.DS18B20.TEMPERATURE
+      + LENGTH.EVENT.DS18B20.REDUNDANT) {
       data.sensorId = Bits.toNumber(data.sensorId);
       data.temperature = Bits.toNumber(data.temperature) / 2 - 55;
       events.emit(INBOUND_EVENT_NAME.DS18B20, data.sensorId, data.temperature);

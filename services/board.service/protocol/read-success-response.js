@@ -5,10 +5,14 @@ const { STATE, LENGTH, ERROR, PACKET_TYPE, INBOUND_EVENT, INBOUND_EVENT_NAME,
 
 module.exports = function (data, events) {
   function readSetRelay(bit) {
-    // we won't get any data so let's just move on
-    events.emit('response', 'success');
-    data.pendingRequest = null;
-    data.state = STATE.IDLE;
+    // we won't get any data so let's just throw away redundant bits
+    data.i++;
+
+    if (data.i === LENGTH.SUCCESS_RESPONSE.SET_RELAY.REDUNDANT) {
+      events.emit('response', 'success');
+      data.pendingRequest = null;
+      data.state = STATE.IDLE;
+    }
   }
 
   function readGetRelay(bit) {
@@ -18,33 +22,44 @@ module.exports = function (data, events) {
       return;
     }
 
-    data.relayState[data.i] = bit;
-    data.relayState = Bits.toNumber(data.relayState);
-    events.emit('response', 'success', data.relayState);
-    data.pendingRequest = null;
-    data.state = STATE.IDLE;
+    if (data.i === 0) {
+      data.relayState[data.i] = bit;
+    }
+    data.i++;
+
+    if (data.i === 1 + LENGTH.SUCCESS_RESPONSE.GET_RELAY.REDUNDANT) {
+      data.relayState = Bits.toNumber(data.relayState);
+      events.emit('response', 'success', data.relayState);
+      data.pendingRequest = null;
+      data.state = STATE.IDLE;
+    }
   }
 
   function readToggleRelay(bit) {
-    // we won't get any data so let's just move on
-    events.emit('response', 'success');
-    data.pendingRequest = null;
-    data.state = STATE.IDLE;
+    // we won't get any data so let's just throw away redundant bits
+    data.i++;
+
+    if (data.i === LENGTH.SUCCESS_RESPONSE.TOGGLE_RELAY.REDUNDANT) {
+      events.emit('response', 'success');
+      data.pendingRequest = null;
+      data.state = STATE.IDLE;
+    }
   }
 
   function readGetSoilMoisture(bit) {
     // get ready to read data
     if (bit === null) {
-      data.moisture = new Uint8Array(LENGTH.SOIL_MOISTURE.MOISTURE);
+      data.moisture = new Uint8Array(LENGTH.COMMON.SOIL_MOISTURE.MOISTURE);
       return;
     }
 
-    if (data.i < LENGTH.SOIL_MOISTURE.MOISTURE) {
+    if (data.i < LENGTH.COMMON.SOIL_MOISTURE.MOISTURE) {
       data.moisture[data.i] = bit;
     }
     data.i++;
 
-    if (data.i === LENGTH.SOIL_MOISTURE.MOISTURE) {
+    if (data.i === LENGTH.COMMON.SOIL_MOISTURE.MOISTURE
+        + LENGTH.SUCCESS_RESPONSE.GET_SOIL_MOISTURE.REDUNDANT) {
       data.moisture = Bits.toNumber(data.moisture);
       events.emit('response', 'success', data.moisture);
       data.pendingRequest = null;
@@ -55,19 +70,20 @@ module.exports = function (data, events) {
   function readGetDHT(bit) {
     // get ready to read data
     if (bit === null) {
-      data.humidity = new Uint8Array(LENGTH.DHT.HUMIDITY);
-      data.temperature = new Uint8Array(LENGTH.DHT.TEMPERATURE);
+      data.humidity = new Uint8Array(LENGTH.COMMON.DHT.HUMIDITY);
+      data.temperature = new Uint8Array(LENGTH.COMMON.DHT.TEMPERATURE);
       return;
     }
 
-    if (data.i < LENGTH.DHT.HUMIDITY) {
+    if (data.i < LENGTH.COMMON.DHT.HUMIDITY) {
       data.humidity[data.i] = bit;
     } else {
-      data.temperature[data.i - LENGTH.DHT.HUMIDITY] = bit;
+      data.temperature[data.i - LENGTH.COMMON.DHT.HUMIDITY] = bit;
     }
     data.i++;
 
-    if (data.i === LENGTH.DHT.HUMIDITY + LENGTH.DHT.TEMPERATURE) {
+    if (data.i === LENGTH.COMMON.DHT.HUMIDITY + LENGTH.COMMON.DHT.TEMPERATURE
+        + LENGTH.SUCCESS_RESPONSE.GET_DHT.REDUNDANT) {
       data.humidity = Bits.toNumber(data.humidity);
       data.temperature = Bits.toNumber(data.temperature) / 2 - 40;
       events.emit('response', 'success', data.humidity, data.temperature);
@@ -79,16 +95,16 @@ module.exports = function (data, events) {
   function readGetDS18B20(bit) {
     // get ready to read data
     if (bit === null) {
-      data.temperature = new Uint8Array(LENGTH.DS18B20.TEMPERATURE);
+      data.temperature = new Uint8Array(LENGTH.COMMON.DS18B20.TEMPERATURE);
       return;
     }
 
-    if (data.i < LENGTH.DS18B20.TEMPERATURE) {
+    if (data.i < LENGTH.COMMON.DS18B20.TEMPERATURE) {
       data.temperature[data.i] = bit;
     }
     data.i++;
 
-    if (data.i === LENGTH.DS18B20.TEMPERATURE) {
+    if (data.i === LENGTH.COMMON.DS18B20.TEMPERATURE + LENGTH.SUCCESS_RESPONSE.GET_DS18B20.REDUNDANT) {
       data.temperature = Bits.toNumber(data.temperature) / 2 - 55;
       events.emit('response', 'success', data.temperature);
       data.pendingRequest = null;
