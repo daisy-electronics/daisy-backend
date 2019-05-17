@@ -13,8 +13,30 @@ function fromBuffer(buffer) {
       result[8 * i + j] = byte & mask ? 1 : 0;
     }
   }
-  
+
   return result;
+}
+
+/**
+ * @param {Uint8Array} bits
+ * @return {Buffer}
+ */
+function toBuffer(bits) {
+  const bytes = new Uint8Array(Math.ceil(bits.length / 8));
+  for (let i = 0; i < bits.length / 8; i += 8) {
+    bytes[i] = bits[i] * 128 + bits[i + 1] * 64 + bits[i + 2] * 32 + bits[i + 3] * 16
+      + bits[i + 4] * 8 + bits[i + 5] * 4 + bits[i + 6] * 2 + bits[i + 7];
+  }
+
+  if (bits.length % 8 !== 0) {
+    let byte = 0;
+    for (let i = bits.length - bits.length % 8, k = 128; i < bits.length; i++, k /= 2) {
+      byte += bits[i] * k;
+    }
+    bytes[bytes.length - 1] = byte;
+  }
+
+  return Buffer.from(bytes);
 }
 
 /**
@@ -41,7 +63,7 @@ function toNumber(bits) {
   for (let i = bits.length - 1, k = 1; i >= 0; i--, k *= 2) {
     result += bits[i] * k;
   }
-  
+
   return result;
 }
 

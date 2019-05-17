@@ -70,7 +70,7 @@ module.exports = function (data, events) {
     }
   }
 
-  return function (bit) {
+  return function readFailureResponseData(bit) {
     if (data.pendingRequest === null) {
       throw new MoleculerServerError('Didn\'t expect response.', null, 'ERR_UNEXPECTED_RESPONSE');
     }

@@ -14,12 +14,13 @@ module.exports = function (data, events) {
 
     if (data.i < LENGTH.SOIL_MOISTURE.SENSOR_ID) {
       data.sensorId[data.i] = bit;
-    } else {
+    } else if (data.i < LENGTH.SOIL_MOISTURE.SENSOR_ID + LENGTH.SOIL_MOISTURE.MOISTURE) {
       data.moisture[data.i - LENGTH.SOIL_MOISTURE.SENSOR_ID] = bit;
     }
     data.i++;
 
-    if (data.i === LENGTH.SOIL_MOISTURE.SENSOR_ID + LENGTH.SOIL_MOISTURE.MOISTURE) {
+    if (data.i === LENGTH.SOIL_MOISTURE.SENSOR_ID + LENGTH.SOIL_MOISTURE.MOISTURE
+        + LENGTH.SOIL_MOISTURE.REDUNDANT) {
       data.sensorId = Bits.toNumber(data.sensorId);
       data.moisture = Bits.toNumber(data.moisture);
       events.emit(INBOUND_EVENT_NAME.SOIL_MOISTURE, data.sensorId, data.moisture);
@@ -40,12 +41,13 @@ module.exports = function (data, events) {
       data.sensorId[data.i] = bit;
     } else if (data.i < LENGTH.DHT.SENSOR_ID + LENGTH.DHT.HUMIDITY) {
       data.humidity[data.i - LENGTH.DHT.SENSOR_ID] = bit;
-    } else {
+    } else if (data.i < LENGTH.DHT.SENSOR_ID + LENGTH.DHT.HUMIDITY + LENGTH.DHT.TEMPERATURE) {
       data.temperature[data.i - LENGTH.DHT.SENSOR_ID - LENGTH.DHT.HUMIDITY] = bit;
     }
     data.i++;
 
-    if (data.i === LENGTH.DHT.SENSOR_ID + LENGTH.DHT.HUMIDITY + LENGTH.DHT.TEMPERATURE) {
+    if (data.i === LENGTH.DHT.SENSOR_ID + LENGTH.DHT.HUMIDITY + LENGTH.DHT.TEMPERATURE
+        + LENGTH.DHT.REDUNDANT) {
       data.sensorId = Bits.toNumber(data.sensorId);
       data.humidity = Bits.toNumber(data.humidity);
       data.temperature = Bits.toNumber(data.temperature) / 2 - 40;
@@ -64,12 +66,13 @@ module.exports = function (data, events) {
 
     if (data.i < LENGTH.DS18B20.SENSOR_ID) {
       data.sensorId[data.i] = bit;
-    } else {
+    } else if (data.i < LENGTH.DS18B20.SENSOR_ID + LENGTH.DS18B20.TEMPERATURE) {
       data.temperature[data.i - LENGTH.DS18B20.SENSOR_ID] = bit;
     }
     data.i++;
 
-    if (data.i === LENGTH.DS18B20.SENSOR_ID + LENGTH.DS18B20.TEMPERATURE) {
+    if (data.i === LENGTH.DS18B20.SENSOR_ID + LENGTH.DS18B20.TEMPERATURE
+      + LENGTH.DS18B20.REDUNDANT) {
       data.sensorId = Bits.toNumber(data.sensorId);
       data.temperature = Bits.toNumber(data.temperature) / 2 - 55;
       events.emit(INBOUND_EVENT_NAME.DS18B20, data.sensorId, data.temperature);
@@ -77,7 +80,7 @@ module.exports = function (data, events) {
     }
   }
 
-  return function (bit) {
+  return function readEventData(bit) {
     if (data.subject === INBOUND_EVENT.SOIL_MOISTURE) {
       readSoilMoisture(bit);
     } else if (data.subject === INBOUND_EVENT.DHT) {

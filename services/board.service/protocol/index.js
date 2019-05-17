@@ -1,13 +1,13 @@
 const EventEmitter = require('events');
-const { MoleculerServerError } = require('moleculer').Errors;
+const { MoleculerError, MoleculerServerError } = require('moleculer').Errors;
 const Bits = require('./bits');
 const { STATE, LENGTH, ERROR, PACKET_TYPE, INBOUND_EVENT, INBOUND_EVENT_NAME,
   OUTBOUND_EVENT, OUTBOUND_REQUEST } = require('./constants');
 
-const mapEventSubjectToIndex = {
+const mapEventSubjectToNumber = {
 };
 
-const mapRequestSubjectToIndex = {
+const mapRequestSubjectToNumber = {
   setRelay: OUTBOUND_REQUEST.SET_RELAY,
   getRelay: OUTBOUND_REQUEST.GET_RELAY,
   toggleRelay: OUTBOUND_REQUEST.TOGGLE_RELAY,
@@ -57,10 +57,12 @@ function _testClear() {
   data.pendingRequest = null;
 }
 
-const readEventData = require('./event')(data, events);
-const readRequestData = require('./request')(data, events);
-const readSuccessResponseData = require('./success-response')(data, events);
-const readFailureResponseData = require('./failure-response')(data, events);
+const readEventData = require('./read-event')(data, events);
+const readRequestData = require('./read-request')(data, events);
+const readSuccessResponseData = require('./read-success-response')(data, events);
+const readFailureResponseData = require('./read-failure-response')(data, events);
+
+const encodeRequest = require('./encode-request');
 
 function put(buffer) {
   Bits.fromBuffer(buffer).forEach(bit => {
@@ -139,12 +141,18 @@ function emitEvent(subject, data) {
 }
 
 /**
+ * @param {WriteStream} port
  * @param {Number} subject
  * @param {Object} data
  * @return {Promise}
  */
-function sendRequest(subject, data) {
+function sendRequest(port, subjectName, data) {
+  const subject = mapRequestSubjectToNumber[subjectName];
+  if (typeof subject === 'undefined') {
+    throw new MoleculerError('Invalid request subject.', null, 'ERR_INVALID_REQUEST_SUBJECT', { subjectName });
+  }
 
+  // if (subject )
 }
 
 module.exports = {
