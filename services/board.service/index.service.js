@@ -4,7 +4,7 @@ const SerialPort = require('serialport');
 const ReadLine = require('@serialport/parser-readline');
 const { MoleculerServerError, MoleculerClientError } = require('moleculer').Errors;
 
-const Protocol = require('./protocol');
+const Protocol = require('./old-protocol');
 
 module.exports = {
   name: 'board',
