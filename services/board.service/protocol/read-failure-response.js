@@ -5,21 +5,21 @@ const { STATE, LENGTH, ERROR, PACKET_TYPE, INBOUND_EVENT, INBOUND_EVENT_NAME,
 
 module.exports = function (data, events) {
   function readError(constants, bit) {
-    const length = constants.ERROR;
-    const redundantBits = constants.REDUNDANT;
+    const LENGTH_ERROR = constants.ERROR;
+    const LENGTH_REDUNDANT = constants.REDUNDANT;
 
     // get ready to read data
     if (bit === null) {
-      data.error = new Uint8Array(length);
+      data.error = new Uint8Array(LENGTH_ERROR);
       return;
     }
 
-    if (data.i < length) {
+    if (data.i < LENGTH_ERROR) {
       data.error[data.i] = bit;
     }
     data.i++;
 
-    if (data.i === length + redundantBits) {
+    if (data.i === LENGTH_ERROR + LENGTH_REDUNDANT) {
       data.error = Bits.toNumber(data.error);
       return true;
     }
