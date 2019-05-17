@@ -23,8 +23,8 @@ function fromBuffer(buffer) {
  */
 function toBuffer(bits) {
   const bytes = new Uint8Array(Math.ceil(bits.length / 8));
-  for (let i = 0; i < bits.length / 8; i += 8) {
-    bytes[i] = bits[i] * 128 + bits[i + 1] * 64 + bits[i + 2] * 32 + bits[i + 3] * 16
+  for (let i = 0, j = 0; j < Math.floor(bits.length / 8); i += 8, j++) {
+    bytes[j] = bits[i] * 128 + bits[i + 1] * 64 + bits[i + 2] * 32 + bits[i + 3] * 16
       + bits[i + 4] * 8 + bits[i + 5] * 4 + bits[i + 6] * 2 + bits[i + 7];
   }
 
@@ -69,6 +69,7 @@ function toNumber(bits) {
 
 module.exports = {
   fromBuffer,
+  toBuffer,
   fromNumber,
   toNumber
 };

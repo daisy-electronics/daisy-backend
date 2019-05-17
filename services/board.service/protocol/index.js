@@ -17,27 +17,30 @@ const mapRequestSubjectToNumber = {
 };
 
 const mapErrorNumberToString = {
-  SET_RELAY: {
+  [OUTBOUND_REQUEST.SET_RELAY]: {
     [ERROR.SET_RELAY.INVALID_RELAY_ID]: 'Invalid relay ID.'
   },
-  GET_RELAY: {
+  [OUTBOUND_REQUEST.GET_RELAY]: {
     [ERROR.GET_RELAY.INVALID_RELAY_ID]: 'Invalid relay ID.'
   },
-  TOGGLE_RELAY: {
+  [OUTBOUND_REQUEST.TOGGLE_RELAY]: {
     [ERROR.TOGGLE_RELAY.INVALID_RELAY_ID]: 'Invalid relay ID.'
   },
-  GET_SOIL_MOISTURE: {
+  [OUTBOUND_REQUEST.GET_SOIL_MOISTURE]: {
     [ERROR.GET_SOIL_MOISTURE.INVALID_SENSOR_ID]: 'Invalid sensor ID.'
   },
-  GET_DHT: {
+  [OUTBOUND_REQUEST.GET_DHT]: {
     [ERROR.GET_DHT.INVALID_SENSOR_ID]: 'Invalid sensor ID.'
   },
-  GET_DS18B20: {
+  [OUTBOUND_REQUEST.GET_DS18B20]: {
     [ERROR.GET_DS18B20.INVALID_SENSOR_ID]: 'Invalid sensor ID.'
   }
 };
 
 const events = new EventEmitter;
+
+const requestQueue = [];
+let sendingRequest = false;
 
 let data = {
   state: STATE.IDLE,
@@ -152,7 +155,30 @@ function sendRequest(port, subjectName, data) {
     throw new MoleculerError('Invalid request subject.', null, 'ERR_INVALID_REQUEST_SUBJECT', { subjectName });
   }
 
-  // if (subject )
+  return new Promise((resolve, reject) => {
+    const packet = encodeRequest(subject, data);
+    requestQueue.push({ subject, packet, resolve, reject });
+    emptyRequestQueue(port);
+  });
+}
+
+function emptyRequestQueue(port) {
+  if (sendingRequest || !requestQueue.length) { return; }
+  sendingRequest = true;
+
+  const { subject, packet, resolve, reject } = requestQueue.shift();
+  data.pendingRequest = subject;
+
+  events.once('response', (status, ...args) => {
+    if (status === 'success') {
+      resolve(args.length === 1 ? args[0] : args);
+    } else if (status === 'failure') {
+      reject(new Error(mapErrorNumberToString[subject][args[0]]));
+    }
+    sendingRequest = false;
+    emptyRequestQueue(port);
+  });
+  port.write(packet);
 }
 
 module.exports = {

@@ -5,9 +5,9 @@ const { STATE, LENGTH, ERROR, PACKET_TYPE, INBOUND_EVENT, INBOUND_EVENT_NAME,
 
 module.exports = function (data, events) {
   function readSoilMoisture(bit) {
-    const LENGTH_SENSOR_ID = LENGTH.EVENT.SOIL_MOISTURE.SENSOR_ID;
+    const LENGTH_SENSOR_ID = LENGTH.INBOUND_EVENT.SOIL_MOISTURE.SENSOR_ID;
     const LENGTH_MOISTURE = LENGTH.COMMON.SOIL_MOISTURE.MOISTURE;
-    const LENGTH_REDUNDANT = LENGTH.EVENT.SOIL_MOISTURE.REDUNDANT;
+    const LENGTH_REDUNDANT = LENGTH.INBOUND_EVENT.SOIL_MOISTURE.REDUNDANT;
 
     // get ready for reading data
     if (bit === null) {
@@ -32,10 +32,10 @@ module.exports = function (data, events) {
   }
 
   function readDHT(bit) {
-    const LENGTH_SENSOR_ID = LENGTH.EVENT.DHT.SENSOR_ID;
+    const LENGTH_SENSOR_ID = LENGTH.INBOUND_EVENT.DHT.SENSOR_ID;
     const LENGTH_HUMIDITY = LENGTH.COMMON.DHT.HUMIDITY;
     const LENGTH_TEMPERATURE = LENGTH.COMMON.DHT.TEMPERATURE;
-    const LENGTH_REDUNDANT = LENGTH.EVENT.DHT.REDUNDANT;
+    const LENGTH_REDUNDANT = LENGTH.INBOUND_EVENT.DHT.REDUNDANT;
 
     // get ready for reading data
     if (bit === null) {
@@ -64,9 +64,9 @@ module.exports = function (data, events) {
   }
 
   function readDS18B20(bit) {
-    const LENGTH_SENSOR_ID = LENGTH.EVENT.DS18B20.SENSOR_ID;
+    const LENGTH_SENSOR_ID = LENGTH.INBOUND_EVENT.DS18B20.SENSOR_ID;
     const LENGTH_TEMPERATURE = LENGTH.COMMON.DS18B20.TEMPERATURE;
-    const LENGTH_REDUNDANT = LENGTH.EVENT.DS18B20.REDUNDANT;
+    const LENGTH_REDUNDANT = LENGTH.INBOUND_EVENT.DS18B20.REDUNDANT;
 
     // get ready for reading data
     if (bit === null) {

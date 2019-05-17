@@ -1,5 +1,6 @@
 const Protocol = require('../../services/board.service/protocol');
 const Bits = require('../../services/board.service/protocol/bits');
+const encodeRequest = require('../../services/board.service/protocol/encode-request');
 const { STATE, LENGTH, ERROR, PACKET_TYPE, INBOUND_EVENT, INBOUND_EVENT_NAME,
   OUTBOUND_REQUEST } = require('../../services/board.service/protocol/constants');
 const { toBuffer } = require('../util');
@@ -158,5 +159,106 @@ describe('receiving failing response', () => {
       done();
     });
     Protocol.put(toBuffer('11 0'));
+  });
+});
+
+describe('sending request', () => {
+  let packet = null;
+  const fakePort = {
+    write: bits => packet = bits
+  };
+
+  beforeEach(() => {
+    packet = null;
+  });
+
+  test('setRelay', done => {
+    Protocol.sendRequest(fakePort, 'setRelay', { relayId: 3, state: 1 })
+    .then(
+      () => {
+        expect(packet.compare(Buffer.from([0b01000001, 0b11000000]))).toEqual(0);
+        done();
+      },
+      error => {
+        done(`Should have succeeded: ${error}`);
+      }
+    );
+    Protocol.put(toBuffer('10'));
+  });
+
+  test('getRelay', done => {
+    Protocol.sendRequest(fakePort, 'getRelay', { relayId: 5 })
+    .then(
+      state => {
+        expect(packet.compare(Buffer.from([0b01000110, 0b10000000]))).toEqual(0);
+        expect(state).toEqual(1);
+        done();
+      },
+      error => {
+        done(`Should have succeeded: ${error}`);
+      }
+    );
+    Protocol.put(toBuffer('10 1'));
+  });
+
+  test('toggleRelay', done => {
+    Protocol.sendRequest(fakePort, 'toggleRelay', { relayId: 3 })
+    .then(
+      () => {
+        done(`Should have failed.`);
+      },
+      error => {
+        expect(packet.compare(Buffer.from([0b01001001, 0b10000000]))).toEqual(0);
+        expect(error.message).toEqual('Invalid relay ID.');
+        done();
+      }
+    );
+    Protocol.put(toBuffer('11 0'));
+  });
+
+  test('getSoilMoisture', done => {
+    Protocol.sendRequest(fakePort, 'getSoilMoisture', { sensorId: 13 })
+    .then(
+      moisture => {
+        expect(packet.compare(Buffer.from([0b01001111, 0b01000000]))).toEqual(0);
+        expect(moisture).toBe(81);
+        done();
+      },
+      error => {
+        done(`Should have succeeded: ${error}`);
+      }
+    );
+    Protocol.put(toBuffer('10 1010001'));
+  });
+
+  test('getDHT', done => {
+    Protocol.sendRequest(fakePort, 'getDHT', { sensorId: 1 })
+    .then(
+      ([humidity, temperature]) => {
+        expect(packet.compare(Buffer.from([0b01010000, 0b10000000]))).toEqual(0);
+        expect(humidity).toBe(0b0010111);
+        expect(temperature).toBe(0.5);
+        done();
+      },
+      error => {
+        done(`Should have succeeded: ${error}`);
+      }
+    );
+    Protocol.put(toBuffer('10 0010111 01010001'));
+  });
+
+  test('getDS18B20', done => {
+    Protocol.sendRequest(fakePort, 'getDS18B20', { sensorId: 6 })
+    .then(
+      temperature => {
+        expect(packet.compare(Buffer.from([0b01010111, 0b00000000]))).toEqual(0);
+        expect(temperature).toBe(10.5);
+        done();
+      },
+      error => {
+        done(`Should have succeeded: ${error}`);
+      }
+    );
+    Protocol.put(toBuffer('10 010000011'));
   });
 });
