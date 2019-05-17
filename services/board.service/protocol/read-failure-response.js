@@ -6,7 +6,6 @@ const { STATE, LENGTH, ERROR, PACKET_TYPE, INBOUND_EVENT, INBOUND_EVENT_NAME,
 module.exports = function (data, events) {
   function readError(constants, bit) {
     const LENGTH_ERROR = constants.ERROR;
-    const LENGTH_REDUNDANT = constants.REDUNDANT;
 
     // get ready to read data
     if (bit === null) {
@@ -19,7 +18,7 @@ module.exports = function (data, events) {
     }
     data.i++;
 
-    if (data.i === LENGTH_ERROR + LENGTH_REDUNDANT) {
+    if (data.i === LENGTH_ERROR) {
       data.error = Bits.toNumber(data.error);
       return true;
     }
@@ -29,7 +28,7 @@ module.exports = function (data, events) {
     if (readError(LENGTH.FAILURE_RESPONSE.SET_RELAY, bit)) {
       events.emit('response', 'failure', data.error);
       data.pendingRequest = null;
-      data.state = STATE.IDLE;
+      data.state = STATE.REDUNDANT_BITS_SKIPPING;
     }
   }
 
@@ -37,7 +36,7 @@ module.exports = function (data, events) {
     if (readError(LENGTH.FAILURE_RESPONSE.GET_RELAY, bit)) {
       events.emit('response', 'failure', data.error);
       data.pendingRequest = null;
-      data.state = STATE.IDLE;
+      data.state = STATE.REDUNDANT_BITS_SKIPPING;
     }
   }
 
@@ -45,7 +44,7 @@ module.exports = function (data, events) {
     if (readError(LENGTH.FAILURE_RESPONSE.TOGGLE_RELAY, bit)) {
       events.emit('response', 'failure', data.error);
       data.pendingRequest = null;
-      data.state = STATE.IDLE;
+      data.state = STATE.REDUNDANT_BITS_SKIPPING;
     }
   }
 
@@ -53,7 +52,7 @@ module.exports = function (data, events) {
     if (readError(LENGTH.FAILURE_RESPONSE.GET_SOIL_MOISTURE, bit)) {
       events.emit('response', 'failure', data.error);
       data.pendingRequest = null;
-      data.state = STATE.IDLE;
+      data.state = STATE.REDUNDANT_BITS_SKIPPING;
     }
   }
 
@@ -61,7 +60,7 @@ module.exports = function (data, events) {
     if (readError(LENGTH.FAILURE_RESPONSE.GET_DHT, bit)) {
       events.emit('response', 'failure', data.error);
       data.pendingRequest = null;
-      data.state = STATE.IDLE;
+      data.state = STATE.REDUNDANT_BITS_SKIPPING;
     }
   }
 
@@ -69,7 +68,7 @@ module.exports = function (data, events) {
     if (readError(LENGTH.FAILURE_RESPONSE.GET_DS18B20, bit)) {
       events.emit('response', 'failure', data.error);
       data.pendingRequest = null;
-      data.state = STATE.IDLE;
+      data.state = STATE.REDUNDANT_BITS_SKIPPING;
     }
   }
 

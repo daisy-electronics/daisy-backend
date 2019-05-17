@@ -68,30 +68,37 @@ const readFailureResponseData = require('./read-failure-response')(data, events)
 const encodeRequest = require('./encode-request');
 
 function put(buffer) {
-  Bits.fromBuffer(buffer).forEach(bit => {
-    switch (data.state) {
-    case STATE.IDLE:
-    case STATE.PACKET_TYPE_READING:
-      readPacketType(bit);
-      break;
+  [...buffer].map(byte => Bits.fromNumber(byte))
+    .forEach(byte => {
+      for (const bit of byte) {
+        switch (data.state) {
+        case STATE.IDLE:
+        case STATE.PACKET_TYPE_READING:
+          readPacketType(bit);
+          break;
 
-    case STATE.SUBJECT_READING:
-      readSubject(bit);
-      break;
+        case STATE.SUBJECT_READING:
+          readSubject(bit);
+          break;
 
-    case STATE.EVENT_DATA_READING:
-      readEventData(bit);
-      break;
+        case STATE.EVENT_DATA_READING:
+          readEventData(bit);
+          break;
 
-    case STATE.SUCCESS_RESPONSE_DATA_READING:
-      readSuccessResponseData(bit);
-      break;
+        case STATE.SUCCESS_RESPONSE_DATA_READING:
+          readSuccessResponseData(bit);
+          break;
 
-    case STATE.FAILURE_RESPONSE_DATA_READING:
-      readFailureResponseData(bit);
-      break;
-    }
-  });
+        case STATE.FAILURE_RESPONSE_DATA_READING:
+          readFailureResponseData(bit);
+          break;
+
+        case STATE.REDUNDANT_BITS_SKIPPING:
+          data.state = STATE.IDLE;
+          return;
+        }
+      }
+    });
 }
 
 function readPacketType(bit) {

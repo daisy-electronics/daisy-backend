@@ -7,7 +7,6 @@ module.exports = function (data, events) {
   function readSoilMoisture(bit) {
     const LENGTH_SENSOR_ID = LENGTH.INBOUND_EVENT.SOIL_MOISTURE.SENSOR_ID;
     const LENGTH_MOISTURE = LENGTH.COMMON.SOIL_MOISTURE.MOISTURE;
-    const LENGTH_REDUNDANT = LENGTH.INBOUND_EVENT.SOIL_MOISTURE.REDUNDANT;
 
     // get ready for reading data
     if (bit === null) {
@@ -23,11 +22,11 @@ module.exports = function (data, events) {
     }
     data.i++;
 
-    if (data.i === LENGTH_SENSOR_ID + LENGTH_MOISTURE + LENGTH_REDUNDANT) {
+    if (data.i === LENGTH_SENSOR_ID + LENGTH_MOISTURE) {
       data.sensorId = Bits.toNumber(data.sensorId);
       data.moisture = Bits.toNumber(data.moisture);
       events.emit(INBOUND_EVENT_NAME.SOIL_MOISTURE, data.sensorId, data.moisture);
-      data.state = STATE.IDLE;
+      data.state = STATE.REDUNDANT_BITS_SKIPPING;
     }
   }
 
@@ -35,7 +34,6 @@ module.exports = function (data, events) {
     const LENGTH_SENSOR_ID = LENGTH.INBOUND_EVENT.DHT.SENSOR_ID;
     const LENGTH_HUMIDITY = LENGTH.COMMON.DHT.HUMIDITY;
     const LENGTH_TEMPERATURE = LENGTH.COMMON.DHT.TEMPERATURE;
-    const LENGTH_REDUNDANT = LENGTH.INBOUND_EVENT.DHT.REDUNDANT;
 
     // get ready for reading data
     if (bit === null) {
@@ -54,12 +52,12 @@ module.exports = function (data, events) {
     }
     data.i++;
 
-    if (data.i === LENGTH_SENSOR_ID + LENGTH_HUMIDITY + LENGTH_TEMPERATURE + LENGTH_REDUNDANT) {
+    if (data.i === LENGTH_SENSOR_ID + LENGTH_HUMIDITY + LENGTH_TEMPERATURE) {
       data.sensorId = Bits.toNumber(data.sensorId);
       data.humidity = Bits.toNumber(data.humidity);
       data.temperature = Bits.toNumber(data.temperature) / 2 - 40;
       events.emit(INBOUND_EVENT_NAME.DHT, data.sensorId, data.humidity, data.temperature);
-      data.state = STATE.IDLE;
+      data.state = STATE.REDUNDANT_BITS_SKIPPING;
     }
   }
 
@@ -82,11 +80,11 @@ module.exports = function (data, events) {
     }
     data.i++;
 
-    if (data.i === LENGTH_SENSOR_ID + LENGTH_TEMPERATURE + LENGTH_REDUNDANT) {
+    if (data.i === LENGTH_SENSOR_ID + LENGTH_TEMPERATURE) {
       data.sensorId = Bits.toNumber(data.sensorId);
       data.temperature = Bits.toNumber(data.temperature) / 2 - 55;
       events.emit(INBOUND_EVENT_NAME.DS18B20, data.sensorId, data.temperature);
-      data.state = STATE.IDLE;
+      data.state = STATE.REDUNDANT_BITS_SKIPPING;
     }
   }
 

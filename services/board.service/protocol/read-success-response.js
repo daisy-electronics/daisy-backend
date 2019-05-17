@@ -5,21 +5,14 @@ const { STATE, LENGTH, ERROR, PACKET_TYPE, INBOUND_EVENT, INBOUND_EVENT_NAME,
 
 module.exports = function (data, events) {
   function readSetRelay(bit) {
-    const LENGTH_REDUNDANT = LENGTH.SUCCESS_RESPONSE.SET_RELAY.REDUNDANT;
-
     // we won't get any data so let's just throw away redundant bits
-    data.i++;
-
-    if (data.i === LENGTH_REDUNDANT) {
-      events.emit('response', 'success');
-      data.pendingRequest = null;
-      data.state = STATE.IDLE;
-    }
+    events.emit('response', 'success');
+    data.pendingRequest = null;
+    data.state = STATE.REDUNDANT_BITS_SKIPPING;
   }
 
   function readGetRelay(bit) {
     const LENGTH_STATE = 1;
-    const LENGTH_REDUNDANT = LENGTH.SUCCESS_RESPONSE.GET_RELAY.REDUNDANT;
 
     // get ready to read data
     if (bit === null) {
@@ -32,30 +25,23 @@ module.exports = function (data, events) {
     }
     data.i++;
 
-    if (data.i === LENGTH_STATE + LENGTH_REDUNDANT) {
+    if (data.i === LENGTH_STATE) {
       data.relayState = Bits.toNumber(data.relayState);
       events.emit('response', 'success', data.relayState);
       data.pendingRequest = null;
-      data.state = STATE.IDLE;
+      data.state = STATE.REDUNDANT_BITS_SKIPPING;
     }
   }
 
   function readToggleRelay(bit) {
-    const LENGTH_REDUNDANT = LENGTH.SUCCESS_RESPONSE.TOGGLE_RELAY.REDUNDANT;
-
     // we won't get any data so let's just throw away redundant bits
-    data.i++;
-
-    if (data.i === LENGTH_REDUNDANT) {
-      events.emit('response', 'success');
-      data.pendingRequest = null;
-      data.state = STATE.IDLE;
-    }
+    events.emit('response', 'success');
+    data.pendingRequest = null;
+    data.state = STATE.REDUNDANT_BITS_SKIPPING;
   }
 
   function readGetSoilMoisture(bit) {
     const LENGTH_MOISTURE = LENGTH.COMMON.SOIL_MOISTURE.MOISTURE;
-    const LENGTH_REDUNDANT = LENGTH.SUCCESS_RESPONSE.GET_SOIL_MOISTURE.REDUNDANT;
 
     // get ready to read data
     if (bit === null) {
@@ -68,18 +54,17 @@ module.exports = function (data, events) {
     }
     data.i++;
 
-    if (data.i === LENGTH_MOISTURE + LENGTH_REDUNDANT) {
+    if (data.i === LENGTH_MOISTURE) {
       data.moisture = Bits.toNumber(data.moisture);
       events.emit('response', 'success', data.moisture);
       data.pendingRequest = null;
-      data.state = STATE.IDLE;
+      data.state = STATE.REDUNDANT_BITS_SKIPPING;
     }
   }
 
   function readGetDHT(bit) {
     const LENGTH_HUMIDITY = LENGTH.COMMON.DHT.HUMIDITY;
     const LENGTH_TEMPERATURE = LENGTH.COMMON.DHT.TEMPERATURE;
-    const LENGTH_REDUNDANT = LENGTH.SUCCESS_RESPONSE.GET_DHT.REDUNDANT;
 
     // get ready to read data
     if (bit === null) {
@@ -95,18 +80,17 @@ module.exports = function (data, events) {
     }
     data.i++;
 
-    if (data.i === LENGTH_HUMIDITY + LENGTH_TEMPERATURE + LENGTH_REDUNDANT) {
+    if (data.i === LENGTH_HUMIDITY + LENGTH_TEMPERATURE) {
       data.humidity = Bits.toNumber(data.humidity);
       data.temperature = Bits.toNumber(data.temperature) / 2 - 40;
       events.emit('response', 'success', data.humidity, data.temperature);
       data.pendingRequest = null;
-      data.state = STATE.IDLE;
+      data.state = STATE.REDUNDANT_BITS_SKIPPING;
     }
   }
 
   function readGetDS18B20(bit) {
     const LENGTH_TEMPERATURE = LENGTH.COMMON.DS18B20.TEMPERATURE;
-    const LENGTH_REDUNDANT = LENGTH.SUCCESS_RESPONSE.GET_DS18B20.REDUNDANT;
 
     // get ready to read data
     if (bit === null) {
@@ -119,11 +103,11 @@ module.exports = function (data, events) {
     }
     data.i++;
 
-    if (data.i === LENGTH_TEMPERATURE + LENGTH_REDUNDANT) {
+    if (data.i === LENGTH_TEMPERATURE) {
       data.temperature = Bits.toNumber(data.temperature) / 2 - 55;
       events.emit('response', 'success', data.temperature);
       data.pendingRequest = null;
-      data.state = STATE.IDLE;
+      data.state = STATE.REDUNDANT_BITS_SKIPPING;
     }
   }
 
