@@ -70,6 +70,11 @@ const encodeRequest = require('./encode-request');
 function put(buffer) {
   [...buffer].map(byte => Bits.fromNumber(byte))
     .forEach(byte => {
+      if (data.state === STATE.REDUNDANT_BITS_SKIPPING) {
+        // new byte started so there were no redundant bits
+        data.state = STATE.IDLE;
+      }
+
       for (const bit of byte) {
         switch (data.state) {
         case STATE.IDLE:
@@ -183,7 +188,7 @@ function emptyRequestQueue(port) {
       reject(new Error(mapErrorNumberToString[subject][args[0]]));
     }
     sendingRequest = false;
-    emptyRequestQueue(port);
+    setImmediate(() => emptyRequestQueue(port));
   });
   port.write(packet);
 }
