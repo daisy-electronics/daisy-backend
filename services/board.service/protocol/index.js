@@ -183,7 +183,13 @@ function emptyRequestQueue(port) {
 
   events.once('response', (status, ...args) => {
     if (status === 'success') {
-      resolve(args.length === 1 ? args[0] : args);
+      if (args.length === 0) {
+        resolve();
+      } else if (args.length === 1) {
+        resolve(args[0]);
+      } else {
+        resolve(args);
+      }
     } else if (status === 'failure') {
       reject(new Error(mapErrorNumberToString[subject][args[0]]));
     }
