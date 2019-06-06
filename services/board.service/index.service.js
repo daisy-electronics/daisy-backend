@@ -18,6 +18,21 @@ module.exports = {
 
     this.open = false;
     this.reconnecting = false;
+
+    Protocol.events.on('soil-moisture', (sensorId, moisture) => {
+      this.logger.debug('soil-moisture', { sensorId, moisture });
+      this.broker.emit('board.soil-moisture', { sensorId, moisture });
+    });
+
+    Protocol.events.on('dht', (sensorId, humidity, temperature) => {
+      this.logger.debug('dht', { sensorId, humidity, temperature });
+      this.broker.emit('board.dht', { sensorId, humidity, temperature });
+    });
+
+    Protocol.events.on('ds18b20', (sensorId, temperature) => {
+      this.logger.debug('ds18b20', { sensorId, temperature });
+      this.broker.emit('board.ds18b20', { sensorId, temperature });
+    });
   },
   started() {
     this.connect();
@@ -68,7 +83,7 @@ module.exports = {
     },
     sendRequest(subject, data) {
       if (this.open) {
-        return Protocol.sendRequest(this.port, data);
+        return Protocol.sendRequest(this.port, subject, data);
       } else {
         return new Promise((resolve, reject) =>
           this.events.once('port-open', () =>
@@ -104,7 +119,7 @@ module.exports = {
     },
     toggleRelay: {
       params: {
-        relayId: 'string'
+        relayId: 'number'
       },
       visibility: 'public',
       handler(ctx) {
