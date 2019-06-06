@@ -28,8 +28,8 @@
   "homepage": "https://github.com/daisy-electronics/daisy-backend#readme",
   "devDependencies": {
     "eslint": "^5.10.0",
-    "jest": "^23.6.0",
-    "jest-cli": "^23.6.0",
+    "jest": "^24.8.0",
+    "jest-cli": "^24.8.0",
     "moleculer-repl": "^0.5.3"
   },
   "dependencies": {
