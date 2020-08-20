@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "async-busboy": "^0.7.0",
-    "bcrypt": "^3.0.5",
+    "bcrypt": "^5.0.0",
     "http-range": "^1.0.0",
     "moleculer": "^0.13.0",
     "moleculer-io": "^1.1.1",
